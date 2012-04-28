@@ -1,8 +1,4 @@
-if typeof(exports) == 'undefined'
-  xtnd = {}
-  insideBrowser = true
-else
-  xtnd = exports
+xtnd = exports
 
 _guide = null
 _components = /^(https?):\/\/([^\/]*)(.*)$/
@@ -45,14 +41,13 @@ xtnd.proxiedJS = (code) ->
 xtnd.proxiedHtml = (code) ->
   _guide.convertHtml(code)
 
-if insideBrowser
-  xtnd.assign = (obj, property, value) ->
+xtnd.assign = (obj, property, value) ->
 
-  xtnd.appendAssign = (obj, property, value) ->
+xtnd.appendAssign = (obj, property, value) ->
 
-  xtnd.eval = (code) ->
+xtnd.eval = (code) ->
 
-  xtnd.methodCall = (name, callee, context) ->
+xtnd.methodCall = (name, callee, context) ->
 
-  xtnd.ActiveXObject = () ->
+xtnd.ActiveXObject = () ->
 
