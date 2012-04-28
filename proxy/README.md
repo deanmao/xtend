@@ -30,7 +30,7 @@ This is the entry point for modul8 for converting all client-side js
 into a single file.  Here we will initialize parameters specific to the
 browser client.
 
-## dns_server.coffee
+### dns_server.coffee
 
 Primary used for development mode.  One should create a file called
 'dev' inside of /etc/resolver/ that should contain the following:
