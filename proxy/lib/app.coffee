@@ -1,18 +1,11 @@
 express = require('express')
 request = require('request')
-_ = require('underscore')
-Guide = require('./guide').Guide
-
-guide = new Guide(
-  host: 'myapp.dev:3000'
-  esprima: require('esprima')
-  codegen: require('codegen')
-  xtnd: require('./xtnd')
-  js: require('./js')
-  html: require('./html')
-)
 
 app = module.exports = express.createServer()
+
+guide = null
+app.setGuide = (x) ->
+  guide = x
 
 app.configure ->
   app.use(express.bodyParser())
@@ -25,9 +18,9 @@ app.configure('development', ->
 
 app.get('/x_t_n_d/:name', (req, res) ->
   name = req.params.name
-  if name == 'scripts.js'
+  if name == 'scripts'
     # send one giant js with everything needed
-    res.send('')
+    res.send('asdf  33')
 )
 
 app.all('*', (req, res) ->
@@ -51,4 +44,3 @@ app.all('*', (req, res) ->
   )
 )
 
-app.listen(3000)

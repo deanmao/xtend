@@ -27,11 +27,11 @@ rHot = (prop) ->
 
 class Guide
   constructor: (config) ->
-    xtnd.setGuide(@)
-    for key, value of config
+    for own key, value of config
       do (key, value) =>
         @[key] = value
-    r = @jsRewriter = new @js.Rewriter()
+    r = @jsRewriter = new @js.Rewriter(@esprima, @codegen)
+    @xtnd.setGuide(@)
     checkHotPropertyLiteral = (name, node) ->
       if name == 'prop' && node.type == 'Literal'
         if !pHot(node.value)
@@ -58,9 +58,6 @@ class Guide
       .replaceWith('xtnd.eval(@x)')
     r.find('new ActiveXObject(@x)')
       .replaceWith('new xtnd.ActiveXObject(@x)')
-
-  xtnd: ->
-    xtnd
 
   js: (code) ->
     @jsRewriter.convertToJs(code)

@@ -6,9 +6,10 @@
       "express": "2.5.8"
     , "request": ">= 2.9"
     , "underscore": ""
-    , "cluster": ""
     , "htmlparser": ""
     , "escodegen": ""
     , "esprima": ""
+    , "eyes": ""
+    , "directory-tree-watcher": ""
   }
 }

@@ -13,16 +13,14 @@ traverse = (object, visitor, parent, key) ->
 class Rewriter
   ruleCache: {}
   rules: []
-  constructor: (esprima, codegen, underscore) ->
+  constructor: (esprima, codegen) ->
     @esprima = esprima
     @codegen = codegen
-    @u = underscore
 
   find: (patternStr, checker) ->
     rule = @ruleCache[patternStr]
     unless rule
-      rule = new Rule(patternStr, checker)
-      rule.esprima = @esprima
+      rule = new Rule(patternStr, checker, @esprima)
       @rules[@rules.length] = rule
       @ruleCache[patternStr] = rule
     rule
@@ -31,10 +29,13 @@ class Rewriter
     root = @esprima.parse(js)
     traverse(root, (node, parent, key) =>
       bindings = {}
-      matchingRule = @u(@rules).find( (rule) =>
-        bindings = {}
-        rule.match(node, bindings, parent, key)
-      )
+      matchingRule = null
+      for rule in @rules
+        do (rule) =>
+          bindings = {}
+          if rule.match(node, bindings, parent, key)
+            matchingRule = rule
+            return
       if matchingRule
         parent[key] = matchingRule.sub(bindings)
         return false
@@ -84,7 +85,8 @@ clone = (obj) ->
   JSON.parse(JSON.stringify(obj))
 
 class Rule
-  constructor: (patternStr, checker) ->
+  constructor: (patternStr, checker, esprima) ->
+    @esprima = esprima
     @detect = @_process(patternStr)
     @checker = checker
 
@@ -166,26 +168,26 @@ class Rule
 
 exports.Rule = Rule
 exports.Rewriter = Rewriter
-m = exports.m = (patternStr, jsCode, checker) ->
-  rule = new Rule(patternStr, checker)
-  tree = esprima.parse(jsCode)
-  # p(tree)
-  output = null
-  traverse(tree, (node, parent, key) ->
-    bindings = {}
-    if rule.match(node, bindings, parent, key)
-      output = bindings
-  )
-  return output
+# m = exports.m = (patternStr, jsCode, checker) ->
+#   rule = new Rule(patternStr, checker)
+#   tree = esprima.parse(jsCode)
+#   # p(tree)
+#   output = null
+#   traverse(tree, (node, parent, key) ->
+#     bindings = {}
+#     if rule.match(node, bindings, parent, key)
+#       output = bindings
+#   )
+#   return output
 
-r = exports.r = (patternStr, jsCode, checker) ->
-  writer = new Rewriter()
-  writer.find(patternStr, checker).replaceWith(jsCode)
-  return (code) ->
-    tree = writer.convert(code)
-    # p(esprima.parse(code))
-    # p(tree)
-    codegen.generate(tree)
+# r = exports.r = (patternStr, jsCode, checker) ->
+#   writer = new Rewriter()
+#   writer.find(patternStr, checker).replaceWith(jsCode)
+#   return (code) ->
+#     tree = writer.convert(code)
+#     # p(esprima.parse(code))
+#     # p(tree)
+#     codegen.generate(tree)
 
 # z = r("eval(@x+)", "eval(a, b, c, @x)")
 # console.log(z("eval(1, 2, 3, 4)"))
