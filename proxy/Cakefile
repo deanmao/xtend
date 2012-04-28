@@ -12,12 +12,17 @@ stream = (command, options, callback) ->
   sub.on 'exit', (status) -> callback?() if status is 0
   sub
 
+dns = ->
+  options = ['lib/dns_server.coffee']
+  node = stream 'coffee', options
+
 start = ->
   node?.kill()
   options = ['development.coffee']
   node = stream 'coffee', options
 
 task 'run', 'Run server', ->
+  # dns()
   start()
   watch 'lib', (event, file) ->
     start()

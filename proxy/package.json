@@ -10,6 +10,9 @@
     , "escodegen": ""
     , "esprima": ""
     , "eyes": ""
+    , "vows": ""
+    , "coffee-script": ""
+    , "modul8": ""
     , "directory-tree-watcher": ""
   }
 }

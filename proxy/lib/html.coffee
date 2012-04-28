@@ -1,12 +1,12 @@
-if typeof(exports) != 'undefined'
-  eyes = require "eyes"
-  p = (x) -> eyes.inspect(x)
+# if typeof(exports) != 'undefined'
+#   eyes = require "eyes"
+#   p = (x) -> eyes.inspect(x)
 
 _tags = exports.LOCATION_TAGS = {
   a: 'href'
   img: 'src'
   script: 'src'
-  link: 'src'
+  link: 'href'
   input: 'action'
   iframe: 'src'
   frame: 'src'
@@ -42,7 +42,7 @@ class Handler
   done: ->
 
   rewriteJS: (code) ->
-    @guide.js(code)
+    @guide.convertJs(code)
 
   append: (str) ->
     @output = @output + '<' + str + '>'
@@ -61,14 +61,16 @@ class Handler
       matchingAttrib = _tags[el.name]
       for key, value of el.attribs
         do (key, value) =>
-          if matchingAttrib == key
+          if matchingAttrib == key.toLowerCase()
             value2 = @guide.xtnd.proxiedUrl(value)
             attributes[key] = value2
-          else if _jsAttributes[key]
+          else if _jsAttributes[key.toLowerCase()]
             attributes[key] = @rewriteJS(value)
           else
             attributes[key] = value
       @appendTag(el, attributes)
+      if el.name == 'head'
+        @appendRaw('<script src="/x_t_n_d/scripts"></script>')
 
   appendTag: (el, attributes) ->
     @output = @output + '<' + el.name

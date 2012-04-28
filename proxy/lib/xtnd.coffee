@@ -40,10 +40,10 @@ xtnd.normalUrl = (protocol, host, path) ->
     return orig
 
 xtnd.proxiedJS = (code) ->
-  _guide.js(code)
+  _guide.convertJs(code)
 
 xtnd.proxiedHtml = (code) ->
-  _guide.html(code)
+  _guide.convertHtml(code)
 
 if insideBrowser
   xtnd.assign = (obj, property, value) ->

@@ -1,5 +1,8 @@
 express = require('express')
 request = require('request')
+coffee = require('coffee-script')
+m8 = require('modul8')
+ProxyStream = require('./proxy_stream')
 
 app = module.exports = express.createServer()
 
@@ -19,8 +22,12 @@ app.configure('development', ->
 app.get('/x_t_n_d/:name', (req, res) ->
   name = req.params.name
   if name == 'scripts'
-    # send one giant js with everything needed
-    res.send('asdf  33')
+    m8('./lib/browser.coffee').register('.coffee', (code,bare) ->
+      coffee.compile(code, {bare: bare})
+    ).compile( (code) ->
+      res.setHeader('content-type', 'application/javascript')
+      res.send(code)
+    )
 )
 
 app.all('*', (req, res) ->
@@ -30,17 +37,16 @@ app.all('*', (req, res) ->
     do (k,v) ->
       headers[k] = v
   headers.host = guide.xtnd.toNormalHost(req.headers.host)
+  options = {headers: {}, type: 'binary'}
+  stream = new ProxyStream(res, guide)
   request({
     url: url
     method: req.method
     headers: headers
-  }, (err, resp, body) ->
-    for own k,v of resp.headers
-      do (k,v) ->
-        res.setHeader(k, v)
-    res.status(resp.statusCode)
-    # check content type and covert js/html, or just send body if neither
-    res.send(body)
-  )
+    pipefilter: (resp, dest) ->
+      for own k,v of resp.headers
+        do (k,v) ->
+          stream.setHeader(k, v)
+  }).pipe(stream)
 )
 

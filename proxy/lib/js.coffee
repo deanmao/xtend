@@ -1,6 +1,6 @@
-if typeof(exports) != 'undefined'
-  eyes = require "eyes"
-  p = (x) -> eyes.inspect(x)
+# if typeof(exports) != 'undefined'
+#   eyes = require "eyes"
+#   p = (x) -> eyes.inspect(x)
 
 traverse = (object, visitor, parent, key) ->
   if visitor.call(null, object, parent, key) == false
@@ -28,16 +28,16 @@ class Rewriter
   convert: (js) ->
     root = @esprima.parse(js)
     traverse(root, (node, parent, key) =>
-      bindings = {}
       matchingRule = null
       for rule in @rules
         do (rule) =>
-          bindings = {}
-          if rule.match(node, bindings, parent, key)
-            matchingRule = rule
-            return
+          unless matchingRule
+            bindings = {}
+            if rule.match(node, bindings, parent, key)
+              matchingRule = rule
+              matchingRule.bindings = bindings
       if matchingRule
-        parent[key] = matchingRule.sub(bindings)
+        parent[key] = matchingRule.sub()
         return false
       else
         return true
@@ -143,27 +143,27 @@ class Rule
       node1.value == node2.value &&
       node1.name == node2.name
 
-  sub: (bindings) ->
+  sub: () ->
     # create a clone of substitution, replacing fuzzy nodes with values from bindings
     tree = clone(@substitution)
     traverse(tree, (node, parent, key) =>
-      if node.fuzzy && parent && key && bindings[node.name]
+      if node.fuzzy && parent && key && @bindings[node.name]
         if node.type == 'Literal'
-          parent[key].value = bindings[node.name].name
-        else if parent.constructor == Array
+          parent[key].value = @bindings[node.name].name
+        else if parent.constructor == Array && node.hole
           i = parseInt(key)
-          for item in bindings[node.name]
+          for item in @bindings[node.name]
             do (item) ->
               parent[i] = item
               i = i + 1
         else
-          parent[key] = bindings[node.name]
+          parent[key] = @bindings[node.name]
     )
+    @bindings = null
     tree
 
-  replaceWith: (patternStr, visitor) ->
+  replaceWith: (patternStr) ->
     @substitution = @_process(patternStr)
-    @visitor = visitor
     @
 
 exports.Rule = Rule

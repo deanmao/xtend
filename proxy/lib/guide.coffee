@@ -51,7 +51,7 @@ class Guide
     r.find('@x[@prop] += @z')
       .replaceWith("xtnd.appendAssign(@x, '@prop', @z)")
     r.find('@x.@method(@args+)', checkHotMethod)
-      .replaceWith("xtnd.methodCall('@method', @x, this, @args)")
+      .replaceWith("xtnd.methodCall('@method', @x, this, @args+)")
     r.find('eval(@x)')
       .replaceWith('xtnd.eval(@x)')
     r.find('window.eval(@x)')
@@ -59,11 +59,11 @@ class Guide
     r.find('new ActiveXObject(@x)')
       .replaceWith('new xtnd.ActiveXObject(@x)')
 
-  js: (code) ->
+  convertJs: (code) ->
     @jsRewriter.convertToJs(code)
 
-  html: (code) ->
-    handler = new @html.Handler(@xtnd)
+  convertHtml: (code) ->
+    handler = new @html.Handler(@)
     parser = new @htmlparser.Parser(handler)
     parser.parseComplete(code)
     handler.output
