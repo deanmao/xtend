@@ -5,6 +5,13 @@ types =
   JS: 2
   HTML: 3
 
+# we buffer up all the data if it's html or js, then send
+# all that data to the client.  I guess if we're
+# sophisticated, we could rewrite & stream the html on
+# every closing bracket.
+#
+# we don't manipulate binary content right now, we just
+# pass it along to the response object immediately
 class ProxyStream extends stream.Stream
   constructor: (res, guide) ->
     @guide = guide

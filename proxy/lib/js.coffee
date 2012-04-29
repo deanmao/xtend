@@ -2,7 +2,7 @@
 #   eyes = require "eyes"
 #   p = (x) -> eyes.inspect(x)
 
-traverse = (object, visitor, parent, key) ->
+traverse = exports.traverse = (object, visitor, parent, key) ->
   if visitor.call(null, object, parent, key) == false
     return
   for key,child of object
@@ -168,17 +168,17 @@ class Rule
 
 exports.Rule = Rule
 exports.Rewriter = Rewriter
-# m = exports.m = (patternStr, jsCode, checker) ->
-#   rule = new Rule(patternStr, checker)
-#   tree = esprima.parse(jsCode)
-#   # p(tree)
-#   output = null
-#   traverse(tree, (node, parent, key) ->
-#     bindings = {}
-#     if rule.match(node, bindings, parent, key)
-#       output = bindings
-#   )
-#   return output
+m = exports.m = (patternStr, jsCode, checker) ->
+  rule = new Rule(patternStr, checker)
+  tree = esprima.parse(jsCode)
+  # p(tree)
+  output = null
+  traverse(tree, (node, parent, key) ->
+    bindings = {}
+    if rule.match(node, bindings, parent, key)
+      output = bindings
+  )
+  return output
 
 # r = exports.r = (patternStr, jsCode, checker) ->
 #   writer = new Rewriter()
