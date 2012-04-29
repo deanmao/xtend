@@ -42,8 +42,6 @@ app.all '*', (req, res) ->
   url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
   req.headers.host = xtnd.toNormalHost(req.headers.host)
   stream = new ProxyStream(req, res, app.guide)
-  stream.pipe(res)
-  p req.headers
   request(
     url: url
     method: req.method
@@ -55,5 +53,6 @@ app.all '*', (req, res) ->
       for own k,v of resp.headers
         do (k,v) ->
           res.header(k, stream.visitResponseHeader(k?.toLowerCase(), v))
+      stream.choosePipe()
   ).pipe(stream)
 

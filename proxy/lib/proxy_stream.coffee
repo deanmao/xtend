@@ -1,8 +1,7 @@
 stream = require('stream')
-BufferList = require('bufferlist').BufferList
-eyes = require 'eyes'
-p = () -> eyes.inspect(arguments...)
-gunzip = require './compress'
+inspect = require('eyes').inspector(maxLength: 20000)
+zlib = require 'zlib'
+p = () -> inspect(arguments...)
 
 BINARY = 1
 JS = 2
@@ -22,7 +21,6 @@ class ProxyStream extends stream.Stream
     @guide = guide
     @res = res
     @req = req
-    @buf = new BufferList()
     for own k,v of req.headers
       do (k,v) =>
         req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
@@ -36,19 +34,14 @@ class ProxyStream extends stream.Stream
   visitResponseHeader: (name, value) ->
     switch name
       when 'content-encoding'
-        if value?.match(/gzip/)
+        if value?.match(/(gzip|deflate)/i)
           @compressed = true
-          return ''
       when 'content-type'
         @_setContentType(value)
     return value
 
   visitRequestHeader: (name, value) ->
     switch name
-      when 'accept-encoding'
-        return null
-      when 'user-agent'
-        return null
       when 'content-encoding'
         if value?.match(/gzip/)
           @compressed = true
@@ -57,37 +50,52 @@ class ProxyStream extends stream.Stream
         @_setContentType(value)
     return value
 
-  write: (chunk, encoding) ->
-    if @type == BINARY
-      @emit 'data', chunk
+  choosePipe: ->
+    if @type == JS || @type == HTML
+      if @compressed
+        # if the stream came in compressed, we'll send it back out
+        # compressed
+        stream = new ContentStream(@req, @res, @type, @guide)
+        @pipe(zlib.createGunzip()).pipe(stream)
+        stream.pipe(zlib.createGzip()).pipe(@res)
+      else
+        stream = new ContentStream(@req, @res, @type, @guide)
+        @pipe(stream)
+        stream.pipe(@res)
     else
-      @buf.push(chunk)
-      true
+      @pipe(@res)
 
-  bufferString: (cb) ->
-    buffer = @buf.take(@buf.length)
-    if @compressed
-      gunzip buffer, (err, data) ->
-        if err
-          console.log(err)
-          cb('')
-        else
-          cb(data)
-    else
-      cb(buffer)
+  write: (chunk, encoding) ->
+    @emit 'data', chunk
 
   end: ->
-    if @type == HTML
-      @bufferString (data) =>
-        # @emit 'data', new Buffer(@guide.convertHtml(html))
-        @emit 'data', data
-        @emit 'end'
-    else if @type == JS
-      @bufferString (data) =>
-        # @emit 'data', new Buffer(@guide.convertJs(js))
-        @emit 'data', data
-        @emit 'end'
+    @emit 'end'
+
+REWRITE_HTML = false
+REWRITE_JS = false
+class ContentStream extends stream.Stream
+  writable: true
+  constructor: (req, res, type, guide) ->
+    @type = type
+    @guide = guide
+    @res = res
+    @req = req
+    @list = []
+
+  write: (chunk, encoding) ->
+    @list.push(chunk.toString())
+    # @buf.push(chunk)
+    # @emit 'data', chunk.toString()
+    # @emit 'data', chunk
+
+  end: (x) ->
+    data = @list.join('')
+    if @type == HTML && REWRITE_HTML
+      @emit 'data', @guide.convertHtml(data)
+    else if @type == JS && REWRITE_JS
+      @emit 'data', @guide.convertJs(data)
     else
-      @emit 'end'
+      @emit 'data', data
+    @emit 'end'
 
 module.exports = ProxyStream
