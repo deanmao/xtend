@@ -1,3 +1,4 @@
+# private methods & variables:
 _hotReferences = {}
 for x in ["location", "top", "parent"]
   do (x) ->
@@ -27,9 +28,14 @@ rHot = (prop) ->
 
 class Guide
   constructor: (config) ->
+    # ------------- copy over config into instance variables
     for own key, value of config
       do (key, value) =>
         @[key] = value
+    # ------------- html init:
+    @htmlHandler = new @html.Handler(@)
+    @htmlParser = new @htmlparser.Parser(@htmlHandler)
+    # ------------- js init:
     r = @jsRewriter = new @js.Rewriter(@esprima, @codegen)
     @xtnd.setGuide(@)
     checkHotPropertyLiteral = (name, node) ->
@@ -42,6 +48,7 @@ class Guide
         if !mHot(node.value)
           return false
       return true
+    # ------------- create js rewrite rules
     r.find('@x.@prop = @z')
       .replaceWith("xtnd.assign(@x, '@prop', @z)")
     r.find('@x[@prop] = @z')
@@ -63,9 +70,21 @@ class Guide
     @jsRewriter.convertToJs(code)
 
   convertHtml: (code) ->
-    handler = new @html.Handler(@)
-    parser = new @htmlparser.Parser(handler)
-    parser.parseComplete(code)
-    handler.output
+    @htmlHandler.reset()
+    @htmlParser.parseComplete(code)
+    @htmlHandler.output
+
+  htmlVisitor: (location, name) ->
+    # ------------- append our special script after head tag
+    if name == 'head' && location == 'after'
+        '<script src="/x_t_n_d/scripts"></script>'
+
+  p: () ->
+    if typeof(window) != 'undefined'
+      console.log.apply(console, arguments)
+    else
+      unless @eyes
+        @eyes = require('eyes')
+      @eyes.inspect(arguments...)
 
 exports.Guide = Guide

@@ -13,22 +13,26 @@ types =
 # we don't manipulate binary content right now, we just
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
-  constructor: (res, guide) ->
+  writeable: true
+  constructor: (req, res, guide) ->
+    @type = types.BINARY
     @guide = guide
     @res = res
+    @req = req
     @buf = ''
     @on 'data', (data) =>
       @buf += data
-    @writable = true
+    for own k,v of req.headers
+      do (k, v) =>
+        if k?.toLowerCase() == 'accept' && v?.match(/html/)
+          @type = types.HTML
 
-  setHeader: (k, v) ->
+  visitHeader: (k, v, res) ->
     if k.toLowerCase() == 'content-type'
       if v?.match(/html/i)
         @type = types.HTML
       else if v?.match(/javascript/i)
         @type = types.JS
-      else
-        @type = types.BINARY
 
   write: (chunk) ->
     if @type == types.BINARY
@@ -40,10 +44,12 @@ class ProxyStream extends stream.Stream
     if chunk
       @write(chunk)
     if @type == types.HTML
+      @guide.p(@buf)
       @res.write(@guide.convertHtml(@buf))
     else if @type == types.JS
       @res.write(@guide.convertJs(@buf))
     @res.end()
     @emit('end')
+    @guide.p('end!!')
 
 module.exports = ProxyStream

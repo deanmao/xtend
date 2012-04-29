@@ -35,9 +35,11 @@ _attrs.replace /\w+/g, (x) ->
 class Handler
   constructor: (guide) ->
     @guide = guide
+    @visitor = guide.htmlVisitor
+    @output = ''
 
-  output: ''
   reset: ->
+    @output = ''
 
   done: ->
 
@@ -48,9 +50,15 @@ class Handler
     @output = @output + '<' + str + '>'
 
   appendRaw: (str) ->
-    @output = @output + str
+    @output += str
+
+  visit: (location, name) ->
+    data = @visitor?(location, name)
+    if data
+      @appendRaw(data)
 
   writeTag: (el) ->
+    @visit('before', el.name)
     if el.name?.match(/script/i)
       @insideScript = true
     if el.name[0] == '/'
@@ -69,8 +77,7 @@ class Handler
           else
             attributes[key] = value
       @appendTag(el, attributes)
-      if el.name == 'head'
-        @appendRaw('<script src="/x_t_n_d/scripts"></script>')
+      @visit('after', el.name)
 
   appendTag: (el, attributes) ->
     @output = @output + '<' + el.name
@@ -85,6 +92,7 @@ class Handler
     @output = @output + chunks.join('') + '>'
 
   writeText: (el) ->
+    @visit('inside', el.name)
     if @insideScript
       @appendRaw(@rewriteJS(el.raw))
     else
@@ -97,17 +105,3 @@ class Handler
     @append(el.raw)
 
 exports.Handler = Handler
-
-# handler = new Handler()
-# parser = new htmlparser.Parser(handler)
-# parser.parseChunk("<html><SCRIPT>blah</script>")
-# console.log(handler.output)
-
-# html = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">'
-# request('http://news.ycombinator.com', (err, req, body) ->
-#   handler = new Handler()
-#   parser = new htmlparser.Parser(handler)
-#   parser.parseComplete(body)
-#   # console.log(body)
-# )
-

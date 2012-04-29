@@ -179,34 +179,3 @@ m = exports.m = (patternStr, jsCode, checker) ->
       output = bindings
   )
   return output
-
-# r = exports.r = (patternStr, jsCode, checker) ->
-#   writer = new Rewriter()
-#   writer.find(patternStr, checker).replaceWith(jsCode)
-#   return (code) ->
-#     tree = writer.convert(code)
-#     # p(esprima.parse(code))
-#     # p(tree)
-#     codegen.generate(tree)
-
-# z = r("eval(@x+)", "eval(a, b, c, @x)")
-# console.log(z("eval(1, 2, 3, 4)"))
-
-# r = new Rewriter()
-# rule = r.find("@a.@b = @c").replaceWith("func(@a, @b, '@c')")
-# tree = r.convert("w.x.y.z = 2; z.b = 2;")
-# p('--------------------------------------------------- done!')
-# p(tree)
-# p(codegen.generate(tree))
-
-# b = m("@a.asdf = @c", "blah.asdf = 3")
-# p("-------------")
-# p(b)
-
-# tree = esprima.parse("w.x.y.z = 2").body[0]
-# bool = rule.match(tree)
-# if bool
-#   p("You are CORRECT!")
-
-
-
