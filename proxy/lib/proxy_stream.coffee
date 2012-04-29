@@ -1,9 +1,12 @@
 stream = require('stream')
+BufferList = require('bufferlist').BufferList
+eyes = require 'eyes'
+p = () -> eyes.inspect(arguments...)
+gunzip = require './compress'
 
-types =
-  BINARY: 1
-  JS: 2
-  HTML: 3
+BINARY = 1
+JS = 2
+HTML = 3
 
 # we buffer up all the data if it's html or js, then send
 # all that data to the client.  I guess if we're
@@ -13,43 +16,78 @@ types =
 # we don't manipulate binary content right now, we just
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
-  writeable: true
+  writable: true
   constructor: (req, res, guide) ->
-    @type = types.BINARY
+    @type = BINARY
     @guide = guide
     @res = res
     @req = req
-    @buf = ''
-    @on 'data', (data) =>
-      @buf += data
+    @buf = new BufferList()
     for own k,v of req.headers
-      do (k, v) =>
-        if k?.toLowerCase() == 'accept' && v?.match(/html/)
-          @type = types.HTML
+      do (k,v) =>
+        req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
 
-  visitHeader: (k, v, res) ->
-    if k.toLowerCase() == 'content-type'
-      if v?.match(/html/i)
-        @type = types.HTML
-      else if v?.match(/javascript/i)
-        @type = types.JS
+  _setContentType: (value) ->
+    if value?.match(/html/i)
+      @type = HTML
+    else if value?.match(/javascript/i)
+      @type = JS
 
-  write: (chunk) ->
-    if @type == types.BINARY
-      @res.write(chunk)
-    else
+  visitResponseHeader: (name, value) ->
+    switch name
+      when 'content-encoding'
+        if value?.match(/gzip/)
+          @compressed = true
+          return ''
+      when 'content-type'
+        @_setContentType(value)
+    return value
+
+  visitRequestHeader: (name, value) ->
+    switch name
+      when 'accept-encoding'
+        return null
+      when 'user-agent'
+        return null
+      when 'content-encoding'
+        if value?.match(/gzip/)
+          @compressed = true
+          return ''
+      when 'accept'
+        @_setContentType(value)
+    return value
+
+  write: (chunk, encoding) ->
+    if @type == BINARY
       @emit 'data', chunk
+    else
+      @buf.push(chunk)
+      true
 
-  end: (chunk) ->
-    if chunk
-      @write(chunk)
-    if @type == types.HTML
-      @guide.p(@buf)
-      @res.write(@guide.convertHtml(@buf))
-    else if @type == types.JS
-      @res.write(@guide.convertJs(@buf))
-    @res.end()
-    @emit('end')
-    @guide.p('end!!')
+  bufferString: (cb) ->
+    buffer = @buf.take(@buf.length)
+    if @compressed
+      gunzip buffer, (err, data) ->
+        if err
+          console.log(err)
+          cb('')
+        else
+          cb(data)
+    else
+      cb(buffer)
+
+  end: ->
+    if @type == HTML
+      @bufferString (data) =>
+        # @emit 'data', new Buffer(@guide.convertHtml(html))
+        @emit 'data', data
+        @emit 'end'
+    else if @type == JS
+      @bufferString (data) =>
+        # @emit 'data', new Buffer(@guide.convertJs(js))
+        @emit 'data', data
+        @emit 'end'
+    else
+      @emit 'end'
 
 module.exports = ProxyStream

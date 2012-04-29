@@ -20,35 +20,40 @@ app.configure ->
   app.use(express.methodOverride())
   app.use(app.router)
 
-app.configure('development', ->
+app.configure 'development', ->
   app.use(express.errorHandler(dumpExceptions: true, showStack: true))
-)
 
-app.get('/x_t_n_d/:name', (req, res) ->
+sendScripts = (res) ->
+  m8('./lib/browser.coffee').register('.coffee', (code,bare) ->
+    coffee.compile(code, {bare: bare})
+  ).compile (code) ->
+    res.setHeader('Content-Type', 'application/x-javascript')
+    res.send(code)
+
+app.get '/x_t_n_d/:name', (req, res) ->
   name = req.params.name
   if name == 'scripts'
-    m8('./lib/browser.coffee').register('.coffee', (code,bare) ->
-      coffee.compile(code, {bare: bare})
-    ).compile( (code) ->
-      res.setHeader('Content-Type', 'application/x-javascript')
-      res.send(code)
-    )
+    sendScripts(res)
   else
     res.send('')
-)
 
-app.all('*', (req, res) ->
-  url = app.guide.xtnd.normalUrl('http', req.headers.host, req.originalUrl)
-  req.headers.host = app.guide.xtnd.toNormalHost(req.headers.host)
+app.all '*', (req, res) ->
+  xtnd = app.guide.xtnd
+  url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
+  req.headers.host = xtnd.toNormalHost(req.headers.host)
   stream = new ProxyStream(req, res, app.guide)
-  request({
+  stream.pipe(res)
+  p req.headers
+  request(
     url: url
     method: req.method
+    followRedirect: false
+    body: req.param.body
     headers: req.headers
+    jar: false # TODO
     pipefilter: (resp, dest) ->
       for own k,v of resp.headers
         do (k,v) ->
-          stream.visitHeader(k, v, dest)
-  }).pipe(stream)
-)
+          res.header(k, stream.visitResponseHeader(k?.toLowerCase(), v))
+  ).pipe(stream)
 

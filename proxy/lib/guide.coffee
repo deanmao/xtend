@@ -74,6 +74,17 @@ class Guide
     @htmlParser.parseComplete(code)
     @htmlHandler.output
 
+  createHtmlParser: ->
+    handler = new @html.Handler(@)
+    parser = new @htmlparser.Parser(handler)
+    asdf = (chunk, isDone) ->
+      if isDone
+        parser.done()
+      else
+        parser.parseChunk(chunk)
+        handler.reset()
+      handler.output
+
   htmlVisitor: (location, name) ->
     # ------------- append our special script after head tag
     if name == 'head' && location == 'after'
@@ -81,7 +92,7 @@ class Guide
 
   p: () ->
     if typeof(window) != 'undefined'
-      console.log.apply(console, arguments)
+      console.log(arguments...)
     else
       unless @eyes
         @eyes = require('eyes')
