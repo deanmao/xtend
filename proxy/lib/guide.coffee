@@ -50,14 +50,18 @@ class Guide
         if !mHot(node.value)
           return false
       return true
+    skipNumericProperties = (name, node) ->
+      if name == 'prop' && node.name == undefined
+        return false
+      return true
     # ------------- create js rewrite rules
     r.find('@x.@prop = @z')
       .replaceWith("xtnd.assign(@x, '@prop', @z)")
-    r.find('@x[@prop] = @z')
+    r.find('@x[@prop] = @z', skipNumericProperties)
       .replaceWith("xtnd.assign(@x, '@prop', @z)")
     r.find('@x.@prop += @z')
       .replaceWith("xtnd.appendAssign(@x, '@prop', @z)")
-    r.find('@x[@prop] += @z')
+    r.find('@x[@prop] += @z', skipNumericProperties)
       .replaceWith("xtnd.appendAssign(@x, '@prop', @z)")
     r.find('@x.@method(@args+)', checkHotMethod)
       .replaceWith("xtnd.methodCall('@method', @x, this, @args+)")

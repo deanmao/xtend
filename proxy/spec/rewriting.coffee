@@ -81,6 +81,16 @@ vows.describe('js matching rules').addBatch
     'should not match bindings': (bindings) ->
       assert.equal bindings, null
 
+  'only match if the property is not a number':
+    topic: ->
+      m('@a[@b] = @c', 'blah[0] = 3', (name, node) ->
+        if name == 'b' && node.name == undefined
+          return false
+        return true
+      )
+    'should not match bindings': (bindings) ->
+      assert.equal bindings, null
+
   'only match if the object property is location':
     topic: ->
       m('@a.@b = @c', 'blah.location = 3', (name, node) ->
