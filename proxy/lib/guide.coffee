@@ -33,7 +33,7 @@ checkHotMethod = (name, node) ->
   return true
 
 skipNumericProperties = (name, node) ->
-  if name == 'prop' && node.name == undefined
+  if name == 'prop' && node.name == undefined && node.type == 'Literal'
     return false
   return true
 
@@ -59,13 +59,18 @@ class Guide
     r = @jsRewriter = new @js.Rewriter(@esprima, @codegen, @)
     @xtnd.setGuide(@)
     # ------------- create js rewrite rules
+
+    # assignment, but skip function assignments like: a[x] = function(){}
     r.find('@x.@prop = @z', (name, node) ->
       if name == 'z' && node.type == 'FunctionExpression'
         return false
       return true
     ).replaceWith("xtnd_assign(@x, @prop, @z)", convertPropertyToLiteral)
-    # r.find('@x[@prop] = @z', skipNumericProperties)
-    #   .replaceWith("xtnd.assign(@x, @prop, @z)", convertPropertyToLiteral)
+
+    # object field accessor, but skip numeric fields like: obj[3]
+    r.find('@x[@prop] = @z', skipNumericProperties)
+      .replaceWith("xtnd.assign(@x, @prop, @z, 'asdf')")
+
     # r.find('@x.@prop += @z')
     #   .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
     # r.find('@x[@prop] += @z', skipNumericProperties)

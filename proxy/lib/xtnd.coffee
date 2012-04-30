@@ -57,9 +57,6 @@ isDocument = (x) -> x && x.constructor == window.document.constructor
 isWindow = (x) -> x && x.constructor == window.constructor
 isHtmlElement = (x) -> x?.nodeName && x?.nodeType
 
-xtnd.get = (value) ->
-  return value
-
 xtnd.assign = (obj, property, value) ->
   return obj[property] = value
 

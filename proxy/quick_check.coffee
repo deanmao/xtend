@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-
+a[3] = x;
   """
 
 unless useManual
@@ -51,5 +51,5 @@ else
   codegen = require 'escodegen'
   r = new js.Rewriter(esprima, codegen)
   r.find('@x[@prop] = @z')
-    .replaceWith("xtnd.assign(@x, '@prop', @z)")
+    .replaceWith("xtnd.assign(@x, @prop, @z, 'asdf')", visitor)
   console.log(r.convertToJs(code))
