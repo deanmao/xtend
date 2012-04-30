@@ -139,6 +139,10 @@ class Rule
   equals: (node1, node2) ->
     node1.type == node2.type &&
       node1.value == node2.value &&
+      node1.computed == node2.computed &&
+      node1.prefix == node2.prefix &&
+      node1.operator == node2.operator &&
+      node1.kind == node2.kind &&
       node1.name == node2.name
 
   # bindingConversion should return null if it doesn't want to convert

@@ -20,6 +20,28 @@ rHot = (prop) ->
   rHot.list ?= listToHash 'location top parent'
   prop && _hotReferences[prop.toLowerCase()]
 
+checkHotPropertyLiteral = (name, node) ->
+  if name == 'prop' && node.type == 'Literal'
+    if !pHot(node.value)
+      return false
+  return true
+
+checkHotMethod = (name, node) ->
+  if name == 'method' && node.type == 'Identifier'
+    if !mHot(node.value)
+      return false
+  return true
+
+skipNumericProperties = (name, node) ->
+  if name == 'prop' && node.name == undefined
+    return false
+  return true
+
+convertPropertyToLiteral = (binding, node) ->
+  if node.name == 'prop'
+    if binding.type == 'Identifier'
+      {type: 'Literal', value: binding.name}
+
 class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
@@ -36,24 +58,6 @@ class Guide
     # ------------- js init:
     r = @jsRewriter = new @js.Rewriter(@esprima, @codegen, @)
     @xtnd.setGuide(@)
-    checkHotPropertyLiteral = (name, node) ->
-      if name == 'prop' && node.type == 'Literal'
-        if !pHot(node.value)
-          return false
-      return true
-    checkHotMethod = (name, node) ->
-      if name == 'method' && node.type == 'Identifier'
-        if !mHot(node.value)
-          return false
-      return true
-    skipNumericProperties = (name, node) ->
-      if name == 'prop' && node.name == undefined
-        return false
-      return true
-    convertPropertyToLiteral = (binding, node) ->
-      if node.name == 'prop'
-        if binding.type == 'Identifier'
-          {type: 'Literal', value: binding.name}
     # ------------- create js rewrite rules
     r.find('@x.@prop = @z', (name, node) ->
       if name == 'z' && node.type == 'FunctionExpression'

@@ -133,4 +133,11 @@ vows.describe('js matching rules').addBatch
     'should work': (convert) ->
       assert.equal convert("fruit('apple')"), "blah(fruit, 'apple');"
 
+  'ensure it compares computed for MemberExpressions':
+    topic: ->
+      r("@a.@b = @c", "asdf( @a, @b, @c )")
+    'should work': (convert) ->
+      assert.equal convert("a.b = c"), "asdf(a, b, c);"
+      assert.equal convert("a[b] = c"), "a[b] = c;"
+
 .export(module)

@@ -57,7 +57,13 @@ isDocument = (x) -> x && x.constructor == window.document.constructor
 isWindow = (x) -> x && x.constructor == window.constructor
 isHtmlElement = (x) -> x?.nodeName && x?.nodeType
 
-xtnd.assign = (obj, property, value, operation) ->
+xtnd.get = (value) ->
+  return value
+
+xtnd.assign = (obj, property, value) ->
+  return obj[property] = value
+
+xtnd.assign2 = (obj, property, value, operation) ->
   try
     if operation == 'add'
       value = obj[property] + value
