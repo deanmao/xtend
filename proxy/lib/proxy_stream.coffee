@@ -31,11 +31,24 @@ class ProxyStream extends stream.Stream
     else if value?.match(/javascript/i)
       @type = JS
 
+  pipefilter: (resp, dest) ->
+    for own k,v of resp.headers
+      do (k,v) =>
+        val = @visitResponseHeader(k?.toLowerCase(), v)
+        if val
+          @res.setHeader(k, val)
+        else
+          @res.removeHeader(k)
+    @res.statusCode = resp.statusCode
+    @choosePipe()
+
   visitResponseHeader: (name, value) ->
     switch name
       when 'content-encoding'
         if value?.match(/(gzip|deflate)/i)
           @compressed = true
+      when 'location'
+        return @guide.xtnd.proxiedUrl(value)
       when 'content-type'
         @_setContentType(value)
       when 'content-length'

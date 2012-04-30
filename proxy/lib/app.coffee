@@ -57,16 +57,7 @@ app.all '*', (req, res) ->
       body: req.param.body
       headers: req.headers
       jar: false # TODO
-      pipefilter: (resp, dest) ->
-        for own k,v of resp.headers
-          do (k,v) ->
-            val = stream.visitResponseHeader(k?.toLowerCase(), v)
-            if val
-              res.header(k, val)
-            else
-              res.removeHeader(k)
-        res.statusCode = resp.statusCode
-        stream.choosePipe()
+      pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
     ).pipe(stream)
   catch error
     console.log(error)
