@@ -11,9 +11,9 @@ m = (patternStr, jsCode, checker) ->
   )
   return output
 
-r = (patternStr, jsCode, checker) ->
+r = (patternStr, jsCode, checker, visitor) ->
   writer = new js.Rewriter(esprima, codegen)
-  writer.find(patternStr, checker).replaceWith(jsCode)
+  writer.find(patternStr, checker).replaceWith(jsCode, visitor)
   return (code) ->
     tree = writer.convert(code)
     codegen.generate(tree)
@@ -81,6 +81,24 @@ vows.describe('js matching rules').addBatch
     'should not match bindings': (bindings) ->
       assert.equal bindings, null
 
+  'conversion to literal is not supported':
+    topic: ->
+      r('@a[@b] = @c', "method(@a, @b, @c)")
+    'should leave internal representation of literals alone': (convert) ->
+      assert.equal convert('blah[something] = 2'), "method(blah, something, 2);"
+
+  'conversion to literal is supported with conversion function':
+    topic: ->
+      r('@a[@b] = @c', "method(@a, @b, @c)", null, (binding, node) ->
+        if node.name == 'b'
+          if binding.type == 'Identifier'
+            {type: 'Literal', value: binding.name}
+      )
+    'should convert identifiers but leave expressions alone': (convert) ->
+      assert.equal convert('blah[abc] = 2'), "method(blah, 'abc', 2);"
+      assert.equal convert("blah['string'] = 2"), "method(blah, 'string', 2);"
+      assert.equal convert('blah[1+1] = 2'), "method(blah, 1 + 1, 2);"
+
   'only match if the property is not a number':
     topic: ->
       m('@a[@b] = @c', 'blah[0] = 3', (name, node) ->
@@ -109,11 +127,10 @@ vows.describe('js matching rules').addBatch
       assert.equal convert("window.location = 'google.com';"), "assignment(window, location, 'google.com');"
       assert.equal convert("a.b= function(){};"), "assignment(a, b, function () {\n});"
 
-  'converting into bound type':
+  'basic replacements for method':
     topic: ->
-      r("method(@a.@b)", "method2( @a, '@b' )")
+      r("@method(@a)", "blah( @method, @a )")
     'should work': (convert) ->
-      assert.equal convert('method(window.location)'), "method2(window, 'location');"
-      assert.equal convert('something(window.location)'), "something(window.location);"
+      assert.equal convert("fruit('apple')"), "blah(fruit, 'apple');"
 
 .export(module)

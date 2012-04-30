@@ -4,4 +4,4 @@ exports.assert = require "assert"
 exports.vows = require "vows"
 exports.p = (x) -> eyes.inspect(x)
 exports.esprima = require 'esprima'
-exports.codegen = require 'escodegen'
+exports.codegen = require '../lib/client/escodegen'

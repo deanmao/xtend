@@ -6,10 +6,11 @@ app.guide = new gd.Guide(
   REWRITE_JS: true
   host: 'myapp.dev:3000'
   esprima: require('esprima')
-  codegen: require('escodegen')
+  codegen: require('./lib/client/escodegen')
   htmlparser: require('htmlparser')
   xtnd: require('./lib/xtnd')
   js: require('./lib/js')
+  fs: require('fs')
   html: require('./lib/html')
 )
 

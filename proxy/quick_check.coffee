@@ -8,7 +8,9 @@
 argv = require('optimist').argv
 inspect = require('eyes').inspector(maxLength: 20000)
 filename = argv._[0]
-if filename.match(/\.js$/)
+if !filename
+  useManual = true
+else if filename.match(/\.js$/)
   parseJs = true
 else if filename.match(/\.html$/)
   parseHtml = true
@@ -16,8 +18,13 @@ else if filename.match(/\.html$/)
 if argv.manual
   useManual = true
 
-fs = require("fs")
-code = fs.readFileSync(filename, 'utf8')
+if filename
+  fs = require("fs")
+  code = fs.readFileSync(filename, 'utf8')
+else
+  code = """
+this.profile_map['g' + hash] = dom_id;
+  """
 
 unless useManual
   gd = require "./lib/guide"
@@ -27,7 +34,7 @@ unless useManual
     fs: require('fs')
     host: 'myapp.dev:3000'
     esprima: require('esprima')
-    codegen: require('escodegen')
+    codegen: require('./lib/client/escodegen')
     htmlparser: require('htmlparser')
     xtnd: require('./lib/xtnd')
     js: require('./lib/js')

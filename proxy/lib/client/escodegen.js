@@ -498,278 +498,288 @@
     }
 
     function generateStatement(stmt) {
-        var i, len, result, previousBase;
+        try {
+            var i, len, result, previousBase;
 
-        switch (stmt.type) {
-        case Syntax.BlockStatement:
-            result = '{\n';
+            switch (stmt.type) {
+            case Syntax.BlockStatement:
+                result = '{\n';
 
-            previousBase = base;
-            base += indent;
-            for (i = 0, len = stmt.body.length; i < len; i += 1) {
-                result += addIndent(generateStatement(stmt.body[i])) + '\n';
-            }
-            base = previousBase;
-
-            result += addIndent('}');
-            break;
-
-        case Syntax.BreakStatement:
-            if (stmt.label) {
-                result = 'break ' + stmt.label.name + ';';
-            } else {
-                result = 'break;';
-            }
-            break;
-
-        case Syntax.ContinueStatement:
-            if (stmt.label) {
-                result = 'continue ' + stmt.label.name + ';';
-            } else {
-                result = 'continue;';
-            }
-            break;
-
-        case Syntax.DoWhileStatement:
-            result = 'do' + maybeBlock(stmt.body, true) + 'while (' + generateExpression(stmt.test) + ');';
-            break;
-
-        case Syntax.CatchClause:
-            previousBase = base;
-            base += indent;
-            result = ' catch (' + generateExpression(stmt.param) + ')';
-            base = previousBase;
-            result += maybeBlock(stmt.body);
-            break;
-
-        case Syntax.DebuggerStatement:
-            result = 'debugger;';
-            break;
-
-        case Syntax.EmptyStatement:
-            result = ';';
-            break;
-
-        case Syntax.ExpressionStatement:
-            result = generateExpression(stmt.expression);
-            // 12.4 '{', 'function' is not allowed in this position.
-            // wrap espression with parentheses
-            if (result[0] === '{' || result.indexOf('function ') === 0) {
-                result = '(' + result + ');';
-            } else {
-                result += ';';
-            }
-            break;
-
-        case Syntax.VariableDeclarator:
-            if (stmt.init) {
-                result = stmt.id.name + ' = ' + generateExpression(stmt.init, Precedence.Assignment);
-            } else {
-                result = stmt.id.name;
-            }
-            break;
-
-        case Syntax.VariableDeclaration:
-            result = stmt.kind + ' ';
-            // special path for
-            // var x = function () {
-            // };
-            if (stmt.declarations.length === 1 && stmt.declarations[0].init &&
-                    stmt.declarations[0].init.type === Syntax.FunctionExpression) {
-                result += generateStatement(stmt.declarations[0]);
-            } else {
                 previousBase = base;
                 base += indent;
-                for (i = 0, len = stmt.declarations.length; i < len; i += 1) {
-                    result += generateStatement(stmt.declarations[i]);
-                    if ((i + 1) < len) {
-                        result += ', ';
-                    }
+                for (i = 0, len = stmt.body.length; i < len; i += 1) {
+                    result += addIndent(generateStatement(stmt.body[i])) + '\n';
                 }
                 base = previousBase;
-            }
-            result += ';';
-            break;
 
-        case Syntax.ThrowStatement:
-            result = 'throw ' + generateExpression(stmt.argument) + ';';
-            break;
+                result += addIndent('}');
+                break;
 
-        case Syntax.TryStatement:
-            result = 'try' + maybeBlock(stmt.block);
-            for (i = 0, len = stmt.handlers.length; i < len; i += 1) {
-                result += generateStatement(stmt.handlers[i]);
-            }
-            if (stmt.finalizer) {
-                result += ' finally' + maybeBlock(stmt.finalizer);
-            }
-            break;
-
-        case Syntax.SwitchStatement:
-            previousBase = base;
-            base += indent;
-            result = 'switch (' + generateExpression(stmt.discriminant) + ') {\n';
-            base = previousBase;
-            if (stmt.cases) {
-                for (i = 0, len = stmt.cases.length; i < len; i += 1) {
-                    result += addIndent(generateStatement(stmt.cases[i])) + '\n';
+            case Syntax.BreakStatement:
+                if (stmt.label) {
+                    result = 'break ' + stmt.label.name + ';';
+                } else {
+                    result = 'break;';
                 }
-            }
-            result += addIndent('}');
-            break;
+                break;
 
-        case Syntax.SwitchCase:
-            previousBase = base;
-            base += indent;
-            if (stmt.test) {
-                result = 'case ' + generateExpression(stmt.test) + ':';
-            } else {
-                result = 'default:';
-            }
+            case Syntax.ContinueStatement:
+                if (stmt.label) {
+                    result = 'continue ' + stmt.label.name + ';';
+                } else {
+                    result = 'continue;';
+                }
+                break;
 
-            i = 0;
-            len = stmt.consequent.length;
-            if (len && stmt.consequent[0].type === Syntax.BlockStatement) {
-                result += maybeBlock(stmt.consequent[0]);
-                i = 1;
-            }
+            case Syntax.DoWhileStatement:
+                result = 'do' + maybeBlock(stmt.body, true) + 'while (' + generateExpression(stmt.test) + ');';
+                break;
 
-            for (; i < len; i += 1) {
-                result += '\n' + addIndent(generateStatement(stmt.consequent[i]));
-            }
+            case Syntax.CatchClause:
+                previousBase = base;
+                base += indent;
+                result = ' catch (' + generateExpression(stmt.param) + ')';
+                base = previousBase;
+                result += maybeBlock(stmt.body);
+                break;
 
-            base = previousBase;
-            break;
+            case Syntax.DebuggerStatement:
+                result = 'debugger;';
+                break;
 
-        case Syntax.IfStatement:
-            if (stmt.alternate) {
-                if (stmt.alternate.type === Syntax.IfStatement) {
+            case Syntax.EmptyStatement:
+                result = ';';
+                break;
+
+            case Syntax.ExpressionStatement:
+                result = generateExpression(stmt.expression);
+                // 12.4 '{', 'function' is not allowed in this position.
+                // wrap espression with parentheses
+                if (result[0] === '{' || result.indexOf('function ') === 0) {
+                    result = '(' + result + ');';
+                } else {
+                    result += ';';
+                }
+                break;
+
+            case Syntax.VariableDeclarator:
+                if (stmt.init) {
+                    result = stmt.id.name + ' = ' + generateExpression(stmt.init, Precedence.Assignment);
+                } else {
+                    result = stmt.id.name;
+                }
+                break;
+
+            case Syntax.VariableDeclaration:
+                result = stmt.kind + ' ';
+                // special path for
+                // var x = function () {
+                // };
+                if (stmt.declarations.length === 1 && stmt.declarations[0].init &&
+                        stmt.declarations[0].init.type === Syntax.FunctionExpression) {
+                    result += generateStatement(stmt.declarations[0]);
+                } else {
                     previousBase = base;
                     base += indent;
-                    result = 'if (' +  generateExpression(stmt.test) + ')';
+                    for (i = 0, len = stmt.declarations.length; i < len; i += 1) {
+                        result += generateStatement(stmt.declarations[i]);
+                        if ((i + 1) < len) {
+                            result += ', ';
+                        }
+                    }
                     base = previousBase;
-                    result += maybeBlock(stmt.consequent, true) + 'else ' + generateStatement(stmt.alternate);
+                }
+                result += ';';
+                break;
+
+            case Syntax.ThrowStatement:
+                result = 'throw ' + generateExpression(stmt.argument) + ';';
+                break;
+
+            case Syntax.TryStatement:
+                result = 'try' + maybeBlock(stmt.block);
+                for (i = 0, len = stmt.handlers.length; i < len; i += 1) {
+                    result += generateStatement(stmt.handlers[i]);
+                }
+                if (stmt.finalizer) {
+                    result += ' finally' + maybeBlock(stmt.finalizer);
+                }
+                break;
+
+            case Syntax.SwitchStatement:
+                previousBase = base;
+                base += indent;
+                result = 'switch (' + generateExpression(stmt.discriminant) + ') {\n';
+                base = previousBase;
+                if (stmt.cases) {
+                    for (i = 0, len = stmt.cases.length; i < len; i += 1) {
+                        result += addIndent(generateStatement(stmt.cases[i])) + '\n';
+                    }
+                }
+                result += addIndent('}');
+                break;
+
+            case Syntax.SwitchCase:
+                previousBase = base;
+                base += indent;
+                if (stmt.test) {
+                    result = 'case ' + generateExpression(stmt.test) + ':';
+                } else {
+                    result = 'default:';
+                }
+
+                i = 0;
+                len = stmt.consequent.length;
+                if (len && stmt.consequent[0].type === Syntax.BlockStatement) {
+                    result += maybeBlock(stmt.consequent[0]);
+                    i = 1;
+                }
+
+                for (; i < len; i += 1) {
+                    result += '\n' + addIndent(generateStatement(stmt.consequent[i]));
+                }
+
+                base = previousBase;
+                break;
+
+            case Syntax.IfStatement:
+                if (stmt.alternate) {
+                    if (stmt.alternate.type === Syntax.IfStatement) {
+                        previousBase = base;
+                        base += indent;
+                        result = 'if (' +  generateExpression(stmt.test) + ')';
+                        base = previousBase;
+                        result += maybeBlock(stmt.consequent, true) + 'else ' + generateStatement(stmt.alternate);
+                    } else {
+                        previousBase = base;
+                        base += indent;
+                        result = 'if (' + generateExpression(stmt.test) + ')';
+                        base = previousBase;
+                        result += maybeBlock(stmt.consequent, true) + 'else' + maybeBlock(stmt.alternate);
+                    }
                 } else {
                     previousBase = base;
                     base += indent;
                     result = 'if (' + generateExpression(stmt.test) + ')';
                     base = previousBase;
-                    result += maybeBlock(stmt.consequent, true) + 'else' + maybeBlock(stmt.alternate);
+                    result += maybeBlock(stmt.consequent);
                 }
-            } else {
+                break;
+
+            case Syntax.ForStatement:
                 previousBase = base;
                 base += indent;
-                result = 'if (' + generateExpression(stmt.test) + ')';
-                base = previousBase;
-                result += maybeBlock(stmt.consequent);
-            }
-            break;
-
-        case Syntax.ForStatement:
-            previousBase = base;
-            base += indent;
-            result = 'for (';
-            if (stmt.init) {
-                if (stmt.init.type === Syntax.VariableDeclaration) {
-                    result += generateStatement(stmt.init);
+                result = 'for (';
+                if (stmt.init) {
+                    if (stmt.init.type === Syntax.VariableDeclaration) {
+                        result += generateStatement(stmt.init);
+                    } else {
+                        result += generateExpression(stmt.init) + ';';
+                    }
                 } else {
-                    result += generateExpression(stmt.init) + ';';
+                    result += ';';
                 }
-            } else {
-                result += ';';
-            }
 
-            if (stmt.test) {
-                result += ' ' + generateExpression(stmt.test) + ';';
-            } else {
-                result += ';';
-            }
+                if (stmt.test) {
+                    result += ' ' + generateExpression(stmt.test) + ';';
+                } else {
+                    result += ';';
+                }
 
-            if (stmt.update) {
-                result += ' ' + generateExpression(stmt.update) + ')';
-            } else {
-                result += ')';
-            }
-            base = previousBase;
-
-            result += maybeBlock(stmt.body);
-            break;
-
-        case Syntax.ForInStatement:
-            result = 'for (';
-            if (stmt.left.type === Syntax.VariableDeclaration) {
-                previousBase = base;
-                base += indent + indent;
-                result += stmt.left.kind + ' ' + generateStatement(stmt.left.declarations[0]);
+                if (stmt.update) {
+                    result += ' ' + generateExpression(stmt.update) + ')';
+                } else {
+                    result += ')';
+                }
                 base = previousBase;
-            } else {
+
+                result += maybeBlock(stmt.body);
+                break;
+
+            case Syntax.ForInStatement:
+                result = 'for (';
+                if (stmt.left.type === Syntax.VariableDeclaration) {
+                    previousBase = base;
+                    base += indent + indent;
+                    result += stmt.left.kind + ' ' + generateStatement(stmt.left.declarations[0]);
+                    base = previousBase;
+                } else {
+                    previousBase = base;
+                    base += indent;
+                    result += generateExpression(stmt.left, Precedence.Call);
+                    base = previousBase;
+                }
+
                 previousBase = base;
                 base += indent;
-                result += generateExpression(stmt.left, Precedence.Call);
+                result += ' in ' + generateExpression(stmt.right) + ')';
                 base = previousBase;
-            }
+                result += maybeBlock(stmt.body);
+                break;
 
-            previousBase = base;
-            base += indent;
-            result += ' in ' + generateExpression(stmt.right) + ')';
-            base = previousBase;
-            result += maybeBlock(stmt.body);
-            break;
+            case Syntax.LabeledStatement:
+                result = stmt.label.name + ':' + maybeBlock(stmt.body);
+                break;
 
-        case Syntax.LabeledStatement:
-            result = stmt.label.name + ':' + maybeBlock(stmt.body);
-            break;
-
-        case Syntax.Program:
-            result = '';
-            for (i = 0, len = stmt.body.length; i < len; i += 1) {
-                result += generateStatement(stmt.body[i]);
-                if ((i + 1) < len) {
-                    result += '\n';
+            case Syntax.Program:
+                result = '';
+                for (i = 0, len = stmt.body.length; i < len; i += 1) {
+                    result += generateStatement(stmt.body[i]);
+                    if ((i + 1) < len) {
+                        result += '\n';
+                    }
                 }
+                break;
+
+            case Syntax.FunctionDeclaration:
+                result = 'function ';
+                if (stmt.id) {
+                    result += stmt.id.name;
+                }
+                result += generateFunctionBody(stmt);
+                break;
+
+            case Syntax.ReturnStatement:
+                if (stmt.argument) {
+                    result = 'return ' + generateExpression(stmt.argument) + ';';
+                } else {
+                    result = 'return;';
+                }
+                break;
+
+            case Syntax.WhileStatement:
+                previousBase = base;
+                base += indent;
+                result = 'while (' + generateExpression(stmt.test) + ')';
+                base = previousBase;
+                result += maybeBlock(stmt.body);
+                break;
+
+            case Syntax.WithStatement:
+                previousBase = base;
+                base += indent;
+                result = 'with (' + generateExpression(stmt.object) + ')';
+                base = previousBase;
+                result += maybeBlock(stmt.body);
+                break;
+
+            default:
+                break;
             }
-            break;
 
-        case Syntax.FunctionDeclaration:
-            result = 'function ';
-            if (stmt.id) {
-                result += stmt.id.name;
+            if (result === undefined) {
+                throw new Error('Unknown statement type: ' + stmt.type);
             }
-            result += generateFunctionBody(stmt);
-            break;
-
-        case Syntax.ReturnStatement:
-            if (stmt.argument) {
-                result = 'return ' + generateExpression(stmt.argument) + ';';
-            } else {
-                result = 'return;';
-            }
-            break;
-
-        case Syntax.WhileStatement:
-            previousBase = base;
-            base += indent;
-            result = 'while (' + generateExpression(stmt.test) + ')';
-            base = previousBase;
-            result += maybeBlock(stmt.body);
-            break;
-
-        case Syntax.WithStatement:
-            previousBase = base;
-            base += indent;
-            result = 'with (' + generateExpression(stmt.object) + ')';
-            base = previousBase;
-            result += maybeBlock(stmt.body);
-            break;
-
-        default:
-            break;
+            return result;
+        } catch (e) {
+          if (e.stmt) {
+            throw e;
+          } else {
+              var err = new Error(e);
+              err.stmt = stmt;
+              throw err;
+          }
         }
-
-        if (result === undefined) {
-            throw new Error('Unknown statement type: ' + stmt.type);
-        }
-        return result;
     }
 
     function generate(node, options) {

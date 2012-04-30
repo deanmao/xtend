@@ -11,11 +11,12 @@ traverse = exports.traverse = (object, visitor, parent, key) ->
         traverse(child, visitor, object, key)
 
 class Rewriter
-  ruleCache: {}
-  rules: []
-  constructor: (esprima, codegen) ->
+  constructor: (esprima, codegen, guide) ->
     @esprima = esprima
     @codegen = codegen
+    @guide = guide
+    @ruleCache = {}
+    @rules = []
 
   find: (patternStr, checker) ->
     rule = @ruleCache[patternStr]
@@ -26,7 +27,10 @@ class Rewriter
     rule
 
   convert: (js) ->
-    root = @esprima.parse(js)
+    if @guide?.JS_DEBUG
+      root = @esprima.parse(js, {loc: true})
+    else
+      root = @esprima.parse(js)
     traverse(root, (node, parent, key) =>
       matchingRule = null
       for rule in @rules
@@ -94,13 +98,7 @@ class Rule
     js = js.replace(/@\w+[\+\*\?]?/g, toSpecialName)
     tree = @esprima.parse(js)
     traverse(tree, (node, parent, key) =>
-      if node.type == 'Literal' && node.value?.match(namePrefix)
-        {name, hole} = fromSpecialName(node.value)
-        node.name = name
-        node.value = name
-        node.hole = hole if hole
-        node.fuzzy = true
-      else if node.name?.match(namePrefix)
+      if node.name?.match(namePrefix)
         {name, hole} = fromSpecialName(node.name)
         node.name = name
         node.hole = hole if hole
@@ -143,43 +141,33 @@ class Rule
       node1.value == node2.value &&
       node1.name == node2.name
 
+  # bindingConversion should return null if it doesn't want to convert
+  # anything
+  _convertBinding: (binding, node) ->
+    @bindingConversion?(binding, node) || binding
+
   sub: () ->
     # create a clone of substitution, replacing fuzzy nodes with values from bindings
     tree = clone(@substitution)
     traverse(tree, (node, parent, key) =>
       binding = @bindings[node.name]
       if node.fuzzy && parent && key && binding
-        if node.type == 'Literal'
-          if binding.name
-            parent[key].value = binding.name
-          else
-            parent[key].value = binding.value
-        else if parent.constructor == Array && node.hole
+        if parent.constructor == Array && node.hole
           i = parseInt(key)
-          for item in @bindings[node.name]
-            do (item) ->
-              parent[i] = item
+          for item in binding
+            do (item) =>
+              parent[i] = @_convertBinding(item, node)
               i = i + 1
         else
-          parent[key] = binding
+          parent[key] = @_convertBinding(binding, node)
     )
     @bindings = null
     tree
 
-  replaceWith: (patternStr) ->
+  replaceWith: (patternStr, bindingConversion) ->
     @substitution = @_process(patternStr)
+    @bindingConversion = bindingConversion
     @
 
 exports.Rule = Rule
 exports.Rewriter = Rewriter
-m = exports.m = (patternStr, jsCode, checker) ->
-  rule = new Rule(patternStr, checker)
-  tree = esprima.parse(jsCode)
-  # p(tree)
-  output = null
-  traverse(tree, (node, parent, key) ->
-    bindings = {}
-    if rule.match(node, bindings, parent, key)
-      output = bindings
-  )
-  return output

@@ -41,9 +41,9 @@ class ProxyStream extends stream.Stream
     return value
 
   visitRequestHeader: (name, value) ->
-    switch name
-      when 'accept'
-        @_setContentType(value)
+    # switch name
+    #   when 'accept'
+    #     @_setContentType(value)
     return value
 
   choosePipe: ->
@@ -51,14 +51,17 @@ class ProxyStream extends stream.Stream
       if @compressed
         # if the stream came in compressed, we'll send it back out
         # compressed
+        @res.header('X-Pipe', 'compressed')
         stream = new ContentStream(@req, @res, @type, @guide)
         @pipe(zlib.createGunzip()).pipe(stream)
         stream.pipe(zlib.createGzip()).pipe(@res)
       else
+        @res.header('X-Pipe', 'content')
         stream = new ContentStream(@req, @res, @type, @guide)
         @pipe(stream)
         stream.pipe(@res)
     else
+      @res.header('X-Pipe', 'passthrough')
       @pipe(@res)
 
   write: (chunk, encoding) ->

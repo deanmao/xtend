@@ -38,23 +38,27 @@ app.get '/x_t_n_d/:name', (req, res) ->
     res.send('')
 
 app.all '*', (req, res) ->
-  xtnd = app.guide.xtnd
-  # TODO: we shouldn't be using the host header, but it's okay for now.
-  # -- there are cases when we don't have any headers
-  url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
-  req.headers.host = xtnd.toNormalHost(req.headers.host)
-  stream = new ProxyStream(req, res, app.guide)
-  request(
-    url: url
-    method: req.method
-    followRedirect: false
-    body: req.param.body
-    headers: req.headers
-    jar: false # TODO
-    pipefilter: (resp, dest) ->
-      for own k,v of resp.headers
-        do (k,v) ->
-          res.header(k, stream.visitResponseHeader(k?.toLowerCase(), v))
-      stream.choosePipe()
-  ).pipe(stream)
+  try
+    xtnd = app.guide.xtnd
+    # TODO: we shouldn't be using the host header, but it's okay for now.
+    # -- there are cases when we don't have any headers
+    url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
+    req.headers.host = xtnd.toNormalHost(req.headers.host)
+    stream = new ProxyStream(req, res, app.guide)
+    request(
+      url: url
+      method: req.method
+      followRedirect: false
+      body: req.param.body
+      headers: req.headers
+      jar: false # TODO
+      pipefilter: (resp, dest) ->
+        for own k,v of resp.headers
+          do (k,v) ->
+            res.header(k, stream.visitResponseHeader(k?.toLowerCase(), v))
+        res.statusCode = resp.statusCode
+        stream.choosePipe()
+    ).pipe(stream)
+  catch error
+    console.log(error)
 

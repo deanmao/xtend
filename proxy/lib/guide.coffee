@@ -24,6 +24,7 @@ class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
   PASSTHROUGH: true
+  JS_DEBUG: true
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -31,9 +32,9 @@ class Guide
         @[key] = value
     # ------------- html init:
     @htmlHandler = new @html.Handler(@)
-    @htmlParser = new @htmlparser.Parser(@htmlHandler)
+    @parser = new @htmlparser.Parser(@htmlHandler)
     # ------------- js init:
-    r = @jsRewriter = new @js.Rewriter(@esprima, @codegen)
+    r = @jsRewriter = new @js.Rewriter(@esprima, @codegen, @)
     @xtnd.setGuide(@)
     checkHotPropertyLiteral = (name, node) ->
       if name == 'prop' && node.type == 'Literal'
@@ -49,17 +50,24 @@ class Guide
       if name == 'prop' && node.name == undefined
         return false
       return true
+    convertPropertyToLiteral = (binding, node) ->
+      if node.name == 'prop'
+        if binding.type == 'Identifier'
+          {type: 'Literal', value: binding.name}
     # ------------- create js rewrite rules
     r.find('@x.@prop = @z')
-      .replaceWith("xtnd.assign(@x, '@prop', @z)")
+      .replaceWith("xtnd.assign(@x, @prop, @z)", convertPropertyToLiteral)
     r.find('@x[@prop] = @z', skipNumericProperties)
-      .replaceWith("xtnd.assign(@x, '@prop', @z)")
+      .replaceWith("xtnd.assign(@x, @prop, @z)", convertPropertyToLiteral)
     r.find('@x.@prop += @z')
-      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')")
+      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
     r.find('@x[@prop] += @z', skipNumericProperties)
-      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')")
+      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
     r.find('@x.@method(@args+)', checkHotMethod)
-      .replaceWith("xtnd.methodCall(@x, '@method', this, [@args+])")
+      .replaceWith("xtnd.methodCall(@x, @method, this, [@args+])", (binding, node) ->
+        if node.name == 'method'
+          {type: 'Literal', value: binding.name}
+      )
     r.find('eval(@x)')
       .replaceWith('xtnd.eval(@x)')
     r.find('window.eval(@x)')
@@ -70,17 +78,24 @@ class Guide
 
   convertJs: (code) ->
     if @REWRITE_JS
-      if @fs
-        @p(code)
-        @fs.writeFileSync('data.js', code)
-      @jsRewriter.convertToJs(code)
+      try
+        @jsRewriter.convertToJs(code)
+      catch e
+        if @fs
+          prettyCode = @codegen.generate(@esprima.parse(code))
+          @fs.writeFileSync('error_output.js', prettyCode)
+          try
+            @jsRewriter.convertToJs(prettyCode)
+          catch ee
+            @p?(ee.stmt)
+            throw ee
     else
       code
 
   convertHtml: (code) ->
     if @REWRITE_HTML
       @htmlHandler.reset()
-      @htmlParser.parseComplete(code)
+      @parser.parseComplete(code)
       @htmlHandler.output
     else
       code
