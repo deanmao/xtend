@@ -64,7 +64,7 @@ xtnd.assign = (obj, property, value, operation) ->
      if _guide.PASSTHROUGH
        return (obj[property] = value)
     if obj == null
-      null
+      return null
     else if isDocument(obj)
       if property?.match(/cookie/i)
         obj[property] = value # TODO

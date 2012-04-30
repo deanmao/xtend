@@ -79,15 +79,16 @@ class Guide
     r.find('@obj[@prop] += @rhs', skipNumericProperties)
       .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
 
-    # r.find('@x.@method(@args+)', checkHotMethod)
-    #   .replaceWith("xtnd.methodCall(@x, @method, this, [@args+])", (binding, node) ->
-    #     if node.name == 'method' && binding.type == 'Identifier'
-    #       {type: 'Literal', value: binding.name}
-    #   )
-    # r.find('eval(@x)')
-    #   .replaceWith('xtnd.eval(@x)')
-    # r.find('window.eval(@x)')
-    #   .replaceWith('xtnd.eval(@x)')
+    r.find('@obj.@method(@args+)', checkHotMethod)
+      .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
+        if node.name == 'method' && binding.type == 'Identifier'
+          {type: 'Literal', value: binding.name}
+
+    r.find('eval(@x)')
+      .replaceWith('xtnd.eval(@x)')
+
+    r.find('window.eval(@x)')
+      .replaceWith('xtnd.eval(@x)')
 
     # worry about IE later
     # r.find('new ActiveXObject(@x)')

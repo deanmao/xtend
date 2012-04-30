@@ -30,6 +30,11 @@ sendScripts = (res) ->
     res.setHeader('Content-Type', 'application/x-javascript')
     res.send(code)
 
+# deny robots from scraping anything
+app.get '/robots.txt', (req, res) ->
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+  res.send("User-agent: *\nDisallow: /\n")
+
 app.get '/x_t_n_d/:name', (req, res) ->
   name = req.params.name
   if name == 'scripts'
