@@ -55,23 +55,27 @@ class Guide
         if binding.type == 'Identifier'
           {type: 'Literal', value: binding.name}
     # ------------- create js rewrite rules
-    r.find('@x.@prop = @z')
-      .replaceWith("xtnd.assign(@x, @prop, @z)", convertPropertyToLiteral)
-    r.find('@x[@prop] = @z', skipNumericProperties)
-      .replaceWith("xtnd.assign(@x, @prop, @z)", convertPropertyToLiteral)
-    r.find('@x.@prop += @z')
-      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
-    r.find('@x[@prop] += @z', skipNumericProperties)
-      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
-    r.find('@x.@method(@args+)', checkHotMethod)
-      .replaceWith("xtnd.methodCall(@x, @method, this, [@args+])", (binding, node) ->
-        if node.name == 'method' && binding.type == 'Identifier'
-          {type: 'Literal', value: binding.name}
-      )
-    r.find('eval(@x)')
-      .replaceWith('xtnd.eval(@x)')
-    r.find('window.eval(@x)')
-      .replaceWith('xtnd.eval(@x)')
+    r.find('@x.@prop = @z', (name, node) ->
+      if name == 'z' && node.type == 'FunctionExpression'
+        return false
+      return true
+    ).replaceWith("xtnd_assign(@x, @prop, @z)", convertPropertyToLiteral)
+    # r.find('@x[@prop] = @z', skipNumericProperties)
+    #   .replaceWith("xtnd.assign(@x, @prop, @z)", convertPropertyToLiteral)
+    # r.find('@x.@prop += @z')
+    #   .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
+    # r.find('@x[@prop] += @z', skipNumericProperties)
+    #   .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
+    # r.find('@x.@method(@args+)', checkHotMethod)
+    #   .replaceWith("xtnd.methodCall(@x, @method, this, [@args+])", (binding, node) ->
+    #     if node.name == 'method' && binding.type == 'Identifier'
+    #       {type: 'Literal', value: binding.name}
+    #   )
+    # r.find('eval(@x)')
+    #   .replaceWith('xtnd.eval(@x)')
+    # r.find('window.eval(@x)')
+    #   .replaceWith('xtnd.eval(@x)')
+
     # worry about IE later
     # r.find('new ActiveXObject(@x)')
     #   .replaceWith('new xtnd.ActiveXObject(@x)')

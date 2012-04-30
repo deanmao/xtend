@@ -20,7 +20,9 @@ parts = (url) ->
   x = (url || '').match(_components) || []
   [x[1], x[2], x[3]]
 
-xtnd.setGuide = (guide) -> _guide = guide
+xtnd.setGuide = (guide) ->
+  xtnd._guide = guide
+  _guide = guide
 
 toProxiedHost = xtnd.toProxiedHost = (host) ->
   host.replace(/\-/g, '--').replace(/\./g, '-') + '.' + _guide.host
