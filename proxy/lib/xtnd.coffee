@@ -20,8 +20,7 @@ parts = (url) ->
   x = (url || '').match(_components) || []
   [x[1], x[2], x[3]]
 
-xtnd.setGuide = (guide) ->
-  _guide = guide
+xtnd.setGuide = (guide) -> _guide = guide
 
 toProxiedHost = xtnd.toProxiedHost = (host) ->
   host.replace(/\-/g, '--').replace(/\./g, '-') + '.' + _guide.host
@@ -48,26 +47,13 @@ xtnd.normalUrl = (protocol, host, path) ->
   else
     return orig
 
-xtnd.proxiedJS = (code) ->
-  _guide.convertJs(code)
+xtnd.proxiedJS = (code) -> _guide.convertJs(code)
+xtnd.proxiedHtml = (code) -> _guide.convertHtml(code)
 
-xtnd.proxiedHtml = (code) ->
-  _guide.convertHtml(code)
-
-isLocation = (x) ->
-  if x
-    return x.constructor == window.location.constructor
-  else
-    false
-
-isDocument = (x) ->
-  x && x.constructor == window.document.constructor
-
-isWindow = (x) ->
-  x && x.constructor == window.constructor
-
-isHtmlElement (x) ->
-  x?.nodeName && x?.nodeType
+isLocation = (x) -> x && x.constructor == window.location.constructor
+isDocument = (x) -> x && x.constructor == window.document.constructor
+isWindow = (x) -> x && x.constructor == window.constructor
+isHtmlElement = (x) -> x?.nodeName && x?.nodeType
 
 xtnd.assign = (obj, property, value, operation) ->
   try
@@ -105,7 +91,7 @@ xtnd.assign = (obj, property, value, operation) ->
 xtnd.eval = (code) ->
   eval(xtnd.proxiedJS(code))
 
-xtnd.methodCall = (obj, name, context, args) ->
+xtnd.methodCall = (obj, name, caller, args) ->
   if isDocument(obj) && isOneOf('write writeln', name)
     # handle document.write here...
     document.write(args[0])
