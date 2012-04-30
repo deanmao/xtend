@@ -39,6 +39,8 @@ app.get '/x_t_n_d/:name', (req, res) ->
 
 app.all '*', (req, res) ->
   xtnd = app.guide.xtnd
+  # TODO: we shouldn't be using the host header, but it's okay for now.
+  # -- there are cases when we don't have any headers
   url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
   req.headers.host = xtnd.toNormalHost(req.headers.host)
   stream = new ProxyStream(req, res, app.guide)

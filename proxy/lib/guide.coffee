@@ -23,6 +23,7 @@ rHot = (prop) ->
 class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
+  PASSTHROUGH: true
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -63,8 +64,9 @@ class Guide
       .replaceWith('xtnd.eval(@x)')
     r.find('window.eval(@x)')
       .replaceWith('xtnd.eval(@x)')
-    r.find('new ActiveXObject(@x)')
-      .replaceWith('new xtnd.ActiveXObject(@x)')
+    # worry about IE later
+    # r.find('new ActiveXObject(@x)')
+    #   .replaceWith('new xtnd.ActiveXObject(@x)')
 
   convertJs: (code) ->
     if @REWRITE_JS

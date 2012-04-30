@@ -42,10 +42,6 @@ class ProxyStream extends stream.Stream
 
   visitRequestHeader: (name, value) ->
     switch name
-      when 'content-encoding'
-        if value?.match(/gzip/)
-          @compressed = true
-          return ''
       when 'accept'
         @_setContentType(value)
     return value
@@ -80,11 +76,11 @@ class ContentStream extends stream.Stream
     @req = req
     @list = []
 
+  # in the future, we should parse & send html chunks
+  # instead of waiting until the end since htmlparser
+  # already has that capability
   write: (chunk, encoding) ->
     @list.push(chunk.toString())
-    # @buf.push(chunk)
-    # @emit 'data', chunk.toString()
-    # @emit 'data', chunk
 
   end: (x) ->
     data = @list.join('')
@@ -93,7 +89,10 @@ class ContentStream extends stream.Stream
     else if @type == JS
       @emit 'data', @guide.convertJs(data)
     else
+      # there should be no cases for this,
+      # but we'll leave it here
       @emit 'data', data
+    # everyone needs to submit 'end'
     @emit 'end'
 
 module.exports = ProxyStream

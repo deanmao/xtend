@@ -59,6 +59,8 @@ xtnd.assign = (obj, property, value, operation) ->
   try
     if operation == 'add'
       value = obj[property] + value
+     if _guide.PASSTHROUGH
+       return (obj[property] = value)
     if obj == null
       null
     else if isDocument(obj)
@@ -89,9 +91,14 @@ xtnd.assign = (obj, property, value, operation) ->
     _guide.p(error)
 
 xtnd.eval = (code) ->
-  eval(xtnd.proxiedJS(code))
+  if _guide.PASSTHROUGH
+    eval(code)
+  else
+    eval(xtnd.proxiedJS(code))
 
 xtnd.methodCall = (obj, name, caller, args) ->
+  if _guide.PASSTHROUGH
+    return obj[name].apply(obj, args)
   if isDocument(obj) && isOneOf('write writeln', name)
     # handle document.write here...
     document.write(args[0])
@@ -100,6 +107,4 @@ xtnd.methodCall = (obj, name, caller, args) ->
     obj[name].apply(obj, args)
   else
     obj[name].apply(obj, args)
-
-xtnd.ActiveXObject = () ->
 
