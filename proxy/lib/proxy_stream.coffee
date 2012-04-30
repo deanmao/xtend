@@ -38,6 +38,9 @@ class ProxyStream extends stream.Stream
           @compressed = true
       when 'content-type'
         @_setContentType(value)
+      when 'content-length'
+        if @type == JS || @type == HTML
+          return null
     return value
 
   visitRequestHeader: (name, value) ->
@@ -78,6 +81,10 @@ class ContentStream extends stream.Stream
     @res = res
     @req = req
     @list = []
+    if @type == JS
+      @res.header('X-Pipe-Content', 'javascript')
+    else if @type == HTML
+      @res.header('X-Pipe-Content', 'html')
 
   # in the future, we should parse & send html chunks
   # instead of waiting until the end since htmlparser
@@ -88,14 +95,12 @@ class ContentStream extends stream.Stream
   end: (x) ->
     data = @list.join('')
     if @type == HTML
-      @emit 'data', @guide.convertHtml(data)
+      output = @guide.convertHtml(data)
     else if @type == JS
-      @emit 'data', @guide.convertJs(data)
+      output = @guide.convertJs(data)
     else
-      # there should be no cases for this,
-      # but we'll leave it here
-      @emit 'data', data
-    # everyone needs to submit 'end'
+      output = data
+    @emit 'data', output
     @emit 'end'
 
 module.exports = ProxyStream

@@ -55,7 +55,11 @@ app.all '*', (req, res) ->
       pipefilter: (resp, dest) ->
         for own k,v of resp.headers
           do (k,v) ->
-            res.header(k, stream.visitResponseHeader(k?.toLowerCase(), v))
+            val = stream.visitResponseHeader(k?.toLowerCase(), v)
+            if val
+              res.header(k, val)
+            else
+              res.removeHeader(k)
         res.statusCode = resp.statusCode
         stream.choosePipe()
     ).pipe(stream)
