@@ -51,6 +51,8 @@ class ProxyStream extends stream.Stream
         return @guide.xtnd.proxiedUrl(value)
       when 'content-type'
         @_setContentType(value)
+        if @type == JS || @type == HTML
+          @res.removeHeader('content-length')
       when 'content-length'
         if @type == JS || @type == HTML
           return null
