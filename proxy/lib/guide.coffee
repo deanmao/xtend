@@ -122,6 +122,9 @@ class Guide
     else
       code
 
+  # This one is primarly for doing chunked content, to be used later
+  # when we want to handle the html streams in chunks instead of one big
+  # block.
   createHtmlParser: ->
     handler = new @html.Handler(@)
     parser = new @htmlparser.Parser(handler)
