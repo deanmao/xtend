@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-this.profile_map['g' + hash] = dom_id;
+
   """
 
 unless useManual
@@ -53,4 +53,3 @@ else
   r.find('@x[@prop] = @z')
     .replaceWith("xtnd.assign(@x, '@prop', @z)")
   console.log(r.convertToJs(code))
-  # inspect(esprima.parse(code))

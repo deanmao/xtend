@@ -81,7 +81,7 @@ class Guide
       try
         @jsRewriter.convertToJs(code)
       catch e
-        if @fs
+        if @JS_DEBUG && @fs
           prettyCode = @codegen.generate(@esprima.parse(code))
           @fs.writeFileSync('error_output.js', prettyCode)
           try
@@ -89,6 +89,10 @@ class Guide
           catch ee
             @p?(ee.stmt)
             throw ee
+        else
+          # not sure if we should throw error here or silently fail
+          # and just return the original code
+          throw e
     else
       code
 
