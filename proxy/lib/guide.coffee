@@ -65,7 +65,7 @@ class Guide
       .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
     r.find('@x.@method(@args+)', checkHotMethod)
       .replaceWith("xtnd.methodCall(@x, @method, this, [@args+])", (binding, node) ->
-        if node.name == 'method'
+        if node.name == 'method' && binding.type == 'Identifier'
           {type: 'Literal', value: binding.name}
       )
     r.find('eval(@x)')
