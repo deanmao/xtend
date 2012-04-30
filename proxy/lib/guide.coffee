@@ -27,6 +27,8 @@ rHot = (prop) ->
   prop && _hotReferences[prop.toLowerCase()]
 
 class Guide
+  REWRITE_HTML: true
+  REWRITE_JS: false
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -67,12 +69,20 @@ class Guide
       .replaceWith('new xtnd.ActiveXObject(@x)')
 
   convertJs: (code) ->
-    @jsRewriter.convertToJs(code)
+    if @REWRITE_JS
+      @p(code)
+      @fs.writeFileSync('data.js', code)
+      @jsRewriter.convertToJs(code)
+    else
+      code
 
   convertHtml: (code) ->
-    @htmlHandler.reset()
-    @htmlParser.parseComplete(code)
-    @htmlHandler.output
+    if @REWRITE_HTML
+      @htmlHandler.reset()
+      @htmlParser.parseComplete(code)
+      @htmlHandler.output
+    else
+      code
 
   createHtmlParser: ->
     handler = new @html.Handler(@)
@@ -91,11 +101,6 @@ class Guide
         '<script src="/x_t_n_d/scripts"></script>'
 
   p: () ->
-    if typeof(window) != 'undefined'
-      console.log(arguments...)
-    else
-      unless @eyes
-        @eyes = require('eyes')
-      @eyes.inspect(arguments...)
+    # default to disable debug print
 
 exports.Guide = Guide

@@ -71,8 +71,6 @@ class ProxyStream extends stream.Stream
   end: ->
     @emit 'end'
 
-REWRITE_HTML = false
-REWRITE_JS = false
 class ContentStream extends stream.Stream
   writable: true
   constructor: (req, res, type, guide) ->
@@ -90,9 +88,9 @@ class ContentStream extends stream.Stream
 
   end: (x) ->
     data = @list.join('')
-    if @type == HTML && REWRITE_HTML
+    if @type == HTML
       @emit 'data', @guide.convertHtml(data)
-    else if @type == JS && REWRITE_JS
+    else if @type == JS
       @emit 'data', @guide.convertJs(data)
     else
       @emit 'data', data

@@ -11,6 +11,7 @@
     , "esprima": ""
     , "eyes": ""
     , "vows": ""
+    , "optimist": ""
     , "coffee-script": ""
     , "modul8": ""
     , "directory-tree-watcher": ""
