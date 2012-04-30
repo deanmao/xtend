@@ -37,6 +37,11 @@ skipNumericProperties = (name, node) ->
     return false
   return true
 
+skipRhsFunctionExpressions = (name, node) ->
+  if name == 'rhs' && node.type == 'FunctionExpression'
+    return false
+  return true
+
 convertPropertyToLiteral = (binding, node) ->
   if node.name == 'prop'
     if binding.type == 'Identifier'
@@ -61,20 +66,19 @@ class Guide
     # ------------- create js rewrite rules
 
     # assignment, but skip function assignments like: a[x] = function(){}
-    r.find('@x.@prop = @z', (name, node) ->
-      if name == 'z' && node.type == 'FunctionExpression'
-        return false
-      return true
-    ).replaceWith("xtnd_assign(@x, @prop, @z)", convertPropertyToLiteral)
+    r.find('@obj.@prop = @rhs', skipRhsFunctionExpressions)
+      .replaceWith("xtnd.assign(@obj, @prop, @rhs)", convertPropertyToLiteral)
 
-    # object field accessor, but skip numeric fields like: obj[3]
-    r.find('@x[@prop] = @z', skipNumericProperties)
-      .replaceWith("xtnd.assign(@x, @prop, @z, 'asdf')")
+    # object field accessor assignment, but skip numeric fields like: obj[3]
+    r.find('@obj[@prop] = @rhs', skipNumericProperties)
+      .replaceWith("xtnd.assign(@obj, @prop, @rhs)")
 
-    # r.find('@x.@prop += @z')
-    #   .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
-    # r.find('@x[@prop] += @z', skipNumericProperties)
-    #   .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')", convertPropertyToLiteral)
+    r.find('@obj.@prop += @rhs')
+      .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
+
+    r.find('@obj[@prop] += @rhs', skipNumericProperties)
+      .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
+
     # r.find('@x.@method(@args+)', checkHotMethod)
     #   .replaceWith("xtnd.methodCall(@x, @method, this, [@args+])", (binding, node) ->
     #     if node.name == 'method' && binding.type == 'Identifier'

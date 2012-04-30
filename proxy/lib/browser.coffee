@@ -17,4 +17,3 @@ guide = new gd.Guide(
 )
 
 window.xtnd = guide.xtnd
-window.xtnd_assign = guide.xtnd.assign
