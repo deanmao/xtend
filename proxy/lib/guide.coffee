@@ -28,7 +28,7 @@ rHot = (prop) ->
 
 class Guide
   REWRITE_HTML: true
-  REWRITE_JS: false
+  REWRITE_JS: true
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -70,8 +70,9 @@ class Guide
 
   convertJs: (code) ->
     if @REWRITE_JS
-      @p(code)
-      @fs.writeFileSync('data.js', code)
+      if @fs
+        @p(code)
+        @fs.writeFileSync('data.js', code)
       @jsRewriter.convertToJs(code)
     else
       code

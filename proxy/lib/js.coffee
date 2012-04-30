@@ -147,9 +147,13 @@ class Rule
     # create a clone of substitution, replacing fuzzy nodes with values from bindings
     tree = clone(@substitution)
     traverse(tree, (node, parent, key) =>
-      if node.fuzzy && parent && key && @bindings[node.name]
+      binding = @bindings[node.name]
+      if node.fuzzy && parent && key && binding
         if node.type == 'Literal'
-          parent[key].value = @bindings[node.name].name
+          if binding.name
+            parent[key].value = binding.name
+          else
+            parent[key].value = binding.value
         else if parent.constructor == Array && node.hole
           i = parseInt(key)
           for item in @bindings[node.name]
@@ -157,7 +161,7 @@ class Rule
               parent[i] = item
               i = i + 1
         else
-          parent[key] = @bindings[node.name]
+          parent[key] = binding
     )
     @bindings = null
     tree

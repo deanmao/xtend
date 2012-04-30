@@ -73,7 +73,8 @@ class Handler
             value2 = @guide.xtnd.proxiedUrl(value)
             attributes[key] = value2
           else if _jsAttributes[key.toLowerCase()]
-            attributes[key] = @rewriteJS(value)
+            # TODO: (do we really need to replace &amp; all the time?)
+            attributes[key] = @rewriteJS(value.replace(/&amp;/g, '&'))
           else
             attributes[key] = value
       @appendTag(el, attributes)

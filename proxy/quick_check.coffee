@@ -6,6 +6,7 @@
 # ./quick_check.coffee example.js --manual
 
 argv = require('optimist').argv
+inspect = require('eyes').inspector(maxLength: 20000)
 filename = argv._[0]
 if filename.match(/\.js$/)
   parseJs = true
@@ -15,13 +16,11 @@ else if filename.match(/\.html$/)
 if argv.manual
   useManual = true
 
-console.log('using '+filename)
 fs = require("fs")
 code = fs.readFileSync(filename, 'utf8')
 
 unless useManual
   gd = require "./lib/guide"
-  inspect = require('eyes').inspector(maxLength: 20000)
   guide = new gd.Guide(
     REWRITE_HTML: true
     REWRITE_JS: true
@@ -44,8 +43,7 @@ else
   esprima = require 'esprima'
   codegen = require 'escodegen'
   r = new js.Rewriter(esprima, codegen)
-  # r1 = r.find('@x.@prop = [@z+]')
-  #   .replaceWith("xtnd.assign(@x, '@prop', [@z+])")
-  # r1.name = 'abc'
+  r.find('@x[@prop] = @z')
+    .replaceWith("xtnd.assign(@x, '@prop', @z)")
   console.log(r.convertToJs(code))
-
+  # inspect(esprima.parse(code))
