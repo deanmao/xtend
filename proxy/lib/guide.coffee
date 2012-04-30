@@ -1,29 +1,23 @@
 # private methods & variables:
-_hotReferences = {}
-for x in ["location", "top", "parent"]
-  do (x) ->
-    _hotReferences[x.toLowerCase()] = true
-
-_hotMethods = {}
-for x in ["setAttribute", "write", "writeln", "getAttribute", "open", "setRequestHeader"]
-  do (x) ->
-    _hotMethods[x.toLowerCase()] = true
-
-_hotProperties = {}
-for x in ["location", "URL", "href", "cookie", "domain", "src", "innerHTML",
-   "host", "hostname", "history", "documentURI", "baseURI", "port",
-   "referrer", "parent", "top", "opener", "window", "parentWindow",
-   "action"]
-   do (x) ->
-     _hotProperties[x.toLowerCase()] = true
+listToHash = (str) ->
+  hash = {}
+  str.replace /\w+/g, (x) ->
+    hash[x.toLowerCase()] = true
+  hash
 
 pHot = (prop) ->
-  prop && _hotProperties[prop.toLowerCase()]
+  pHot.list ?= listToHash """
+    location url href cookie domain src innerhtml host hostname history documenturi
+    baseuri port referrer parent top opener window parentwindow action
+  """
+  prop && pHot.list[prop.toLowerCase()]
 
 mHot = (prop) ->
-  prop && _hotMethods[prop.toLowerCase()]
+  mHot.list ?= listToHash 'setattribute write writeln getattribute open setrequestheader'
+  prop && mHot.list[prop.toLowerCase()]
 
 rHot = (prop) ->
+  rHot.list ?= listToHash 'location top parent'
   prop && _hotReferences[prop.toLowerCase()]
 
 class Guide
@@ -60,11 +54,11 @@ class Guide
     r.find('@x[@prop] = @z', skipNumericProperties)
       .replaceWith("xtnd.assign(@x, '@prop', @z)")
     r.find('@x.@prop += @z')
-      .replaceWith("xtnd.appendAssign(@x, '@prop', @z)")
+      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')")
     r.find('@x[@prop] += @z', skipNumericProperties)
-      .replaceWith("xtnd.appendAssign(@x, '@prop', @z)")
+      .replaceWith("xtnd.assign(@x, '@prop', @z, 'add')")
     r.find('@x.@method(@args+)', checkHotMethod)
-      .replaceWith("xtnd.methodCall('@method', @x, this, @args+)")
+      .replaceWith("xtnd.methodCall(@x, '@method', this, [@args+])")
     r.find('eval(@x)')
       .replaceWith('xtnd.eval(@x)')
     r.find('window.eval(@x)')
