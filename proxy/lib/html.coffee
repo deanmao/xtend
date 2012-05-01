@@ -59,7 +59,7 @@ class Handler
 
   writeTag: (el) ->
     @visit('before', el.name)
-    if el.name?.match(/script/i)
+    if el.name?.match(/^script$/i)
       @insideScript = true
     if el.name[0] == '/'
       @append(el.name)
@@ -75,7 +75,7 @@ class Handler
           else if _jsAttributes[key.toLowerCase()]
             # TODO: (do we really need to replace &amp; all the time?)
             value2 = '(function(){' + value.replace(/&amp;/g, '&') + '})()'
-            attributes[key] = @rewriteJS()
+            attributes[key] = @rewriteJS(value2)
           else
             attributes[key] = value
       @appendTag(el, attributes)

@@ -1,5 +1,6 @@
 app = require './lib/app'
 gd = require('./lib/guide')
+inspect = require('eyes').inspector(maxLength: 20000)
 
 app.guide = new gd.Guide(
   REWRITE_HTML: true
@@ -12,6 +13,7 @@ app.guide = new gd.Guide(
   js: require('./lib/js')
   fs: require('fs')
   html: require('./lib/html')
+  p: () -> inspect(arguments...)
 )
 
 app.listen(3000)
