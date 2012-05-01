@@ -8,7 +8,7 @@ p = (x) -> eyes.inspect(x)
 
 app = module.exports = express.createServer()
 
-# clear console
+# clear console 4465
 console.log('.') for i in [0..30]
 
 # FYI: this must be set to a new guide instance before

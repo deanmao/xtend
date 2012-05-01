@@ -10,6 +10,7 @@ listToHash = (str) ->
   hash
 
 isOneOf = (list, property) ->
+  isOneOf.matchers ?= {}
   matcher = isOneOf.matchers[list]
   unless matcher
     isOneOf.matchers[list] = listToHash(list)
@@ -24,7 +25,6 @@ xtnd.setGuide = (guide) ->
   xtnd._guide = guide
   _guide = guide
 
-# 4465
 toProxiedHost = xtnd.toProxiedHost = (host) ->
   host.replace(/\-/g, '--').replace(/\./g, '-') + '.' + _guide.host
 
