@@ -26,6 +26,21 @@ else
 a[3] = x;
   """
 
+class Handler
+  reset: ->
+  done: ->
+  writeTag: (el) ->
+    console.log('--- name:')
+    console.log(el.name)
+    console.log(el.attribs)
+  writeText: (el) ->
+    console.log('--- text:')
+    console.log(el.raw)
+  writeComment: (el) ->
+  writeDirective: (el) ->
+    console.log('--- directive:')
+    console.log(el.raw)
+
 unless useManual
   gd = require "./lib/guide"
   esprima = require('./lib/client/esprima')
@@ -48,10 +63,16 @@ unless useManual
   else if parseJs
     console.log(guide.convertJs(code))
 else
-  js = require('./lib/js')
-  esprima = require 'esprima'
-  codegen = require 'escodegen'
-  r = new js.Rewriter(esprima, codegen)
-  r.find('@x[@prop] = @z')
-    .replaceWith("xtnd.assign(@x, @prop, @z, 'asdf')", visitor)
-  console.log(r.convertToJs(code))
+  if parseHtml
+    htmlparser = require('./lib/client/htmlparser')
+    handler = new Handler()
+    parser = new htmlparser.Parser(handler)
+    parser.parseComplete(code)
+  else
+    js = require('./lib/js')
+    esprima = require 'esprima'
+    codegen = require 'escodegen'
+    r = new js.Rewriter(esprima, codegen)
+    r.find('@x[@prop] = @z')
+      .replaceWith("xtnd.assign(@x, @prop, @z, 'asdf')", visitor)
+    console.log(r.convertToJs(code))

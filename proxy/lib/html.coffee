@@ -44,15 +44,17 @@ encodeChars = exports.encodeChars = (str) ->
   return aRet.join('')
 
 decodeChars = (str) ->
-  str = str.replace(/&#0?0?(\d+);/g, (s, code) ->
-    String.fromCharCode(parseInt(code))
-  ).replace /&(\w+);/g, (s, code) ->
+  decodeInlineChars(str).replace /&(\w+);/g, (s, code) ->
     switch code
       when 'amp' then '&'
       when 'quot' then '"'
       when 'lt' then '<'
       when 'gt' then '>'
       else s
+
+decodeInlineChars = (str) ->
+  str.replace /&#0?0?(\d+);/g, (s, code) ->
+    String.fromCharCode(parseInt(code))
 
 class Handler
   constructor: (guide) ->
@@ -122,7 +124,7 @@ class Handler
   writeText: (el) ->
     @visit('inside', el.name)
     if @insideScript
-      decoded = decodeChars(el.raw)
+      decoded = decodeInlineChars(el.raw)
       @appendRaw(@rewriteJS(decoded))
     else
       @appendRaw(el.raw)
