@@ -99,8 +99,12 @@ class Handler
             attributes[key] = value2
           else if _jsAttributes[key.toLowerCase()]
             # TODO: (do we really need to replace &amp; all the time?)
-            value2 = '(function(){' + value.replace(/&amp;/g, '&') + '})()'
-            attributes[key] = @rewriteJS(value2)
+            value2 = '(function(){' + decodeChars(value) + '})()'
+            data = @rewriteJS(value2)
+            attributes[key] = data
+            if key == 'onload'
+              console.log('onload')
+              console.log(data)
           else
             attributes[key] = value
       @appendTag(el, attributes)

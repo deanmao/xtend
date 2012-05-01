@@ -1,7 +1,10 @@
 xtnd = exports
 
 _guide = null
-_components = /^(https?):\/\/([^\/]*)(.*)$/
+_threeComponents = /^(https?):\/\/([^\/]*)(.*)$/
+_twoComponents = /^\/\/([^\/]*)(.*)$/
+
+_p = () -> console.log(arguments...)
 
 listToHash = (str) ->
   hash = {}
@@ -17,12 +20,15 @@ isOneOf = (list, property) ->
     matcher = isOneOf.matchers[list]
   property && matcher[property.toLowerCase()]
 
-parts = (url) ->
-  x = (url || '').match(_components) || []
+threeParts = (url) ->
+  x = (url || '').match(_threeComponents) || []
   [x[1], x[2], x[3]]
 
+twoParts = (url) ->
+  x = (url || '').match(_twoComponents) || []
+  [x[1], x[2]]
+
 xtnd.setGuide = (guide) ->
-  xtnd._guide = guide
   _guide = guide
 
 toProxiedHost = xtnd.toProxiedHost = (host) ->
@@ -35,18 +41,29 @@ toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
 proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
-    [protocol, host, path] = parts(protocol)
+    [protocol, host, path] = threeParts(orig)
+    unless protocol
+      [host, path] = twoParts(orig)
   if host
-    return protocol + '://' + toProxiedHost(host) + path
+    if protocol
+      return protocol + '://' + toProxiedHost(host) + path
+    else
+      return '//' + toProxiedHost(host) + path
   else
     return orig
 
 normalUrl = xtnd.normalUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
-    [protocol, host, path] = parts(protocol)
+    _p?(orig)
+    [protocol, host, path] = threeParts(orig)
+    unless protocol
+      [host, path] = twoParts(orig)
   if host
-    return protocol + '://' + toNormalHost(host) + path
+    if protocol
+      return protocol + '://' + toNormalHost(host) + path
+    else
+      return '//' + toNormalHost(host) + path
   else
     return orig
 
