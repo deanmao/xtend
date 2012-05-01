@@ -115,8 +115,19 @@ class ContentStream extends stream.Stream
   end: (x) ->
     if @type == JS
       data = @list.join('')
-      output = @guide.convertJs(data)
-      @emit 'data', output
+      # if function/var is present in string, we assume JS
+      # else, we will try to parse it with json and if it fails
+      # go back to JS again
+      if data.match(/(function|var)/)
+        output = @guide.convertJs(data)
+        @emit 'data', output
+      else
+        try
+          JSON.parse(data)
+          @emit 'data', data
+        catch e
+          output = @guide.convertJs(data)
+          @emit 'data', output
     @emit 'end'
 
 module.exports = ProxyStream

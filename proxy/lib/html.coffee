@@ -102,9 +102,6 @@ class Handler
             value2 = '(function(){' + decodeChars(value) + '})()'
             data = @rewriteJS(value2)
             attributes[key] = data
-            if key == 'onload'
-              console.log('onload')
-              console.log(data)
           else
             attributes[key] = value
       @appendTag(el, attributes)
