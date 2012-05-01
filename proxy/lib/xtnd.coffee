@@ -41,6 +41,8 @@ toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
 proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
+    if _guide?.host && orig.indexOf(_guide.host) >= 0
+      return orig # the url is already a proxy url
     [protocol, host, path] = threeParts(orig)
     unless protocol
       [host, path] = twoParts(orig)
@@ -55,7 +57,8 @@ proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
 normalUrl = xtnd.normalUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
-    _p?(orig)
+    if _guide?.host && orig.indexOf(_guide.host) == -1
+      return orig # the url is not a proxy url
     [protocol, host, path] = threeParts(orig)
     unless protocol
       [host, path] = twoParts(orig)
