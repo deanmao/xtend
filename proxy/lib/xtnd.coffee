@@ -24,6 +24,7 @@ xtnd.setGuide = (guide) ->
   xtnd._guide = guide
   _guide = guide
 
+# 4465
 toProxiedHost = xtnd.toProxiedHost = (host) ->
   host.replace(/\-/g, '--').replace(/\./g, '-') + '.' + _guide.host
 
@@ -31,7 +32,7 @@ toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
   subdomain = proxiedHost.split('.')[0]
   subdomain.replace(/\-/g, '.').replace(/\.\./g, '-')
 
-xtnd.proxiedUrl = (protocol, host, path) ->
+proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
     [protocol, host, path] = parts(protocol)
@@ -40,7 +41,7 @@ xtnd.proxiedUrl = (protocol, host, path) ->
   else
     return orig
 
-xtnd.normalUrl = (protocol, host, path) ->
+normalUrl = xtnd.normalUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
     [protocol, host, path] = parts(protocol)
@@ -56,6 +57,7 @@ isLocation = (x) -> x && x.constructor == window.location.constructor
 isDocument = (x) -> x && x.constructor == window.document.constructor
 isWindow = (x) -> x && x.constructor == window.constructor
 isHtmlElement = (x) -> x?.nodeName && x?.nodeType
+isXMLHttpRequest = (x) -> x && x.constructor == XMLHttpRequest
 
 xtnd.assign = (obj, property, value, operation) ->
   try
@@ -69,24 +71,24 @@ xtnd.assign = (obj, property, value, operation) ->
       if property?.match(/cookie/i)
         obj[property] = value # TODO
       else if property?.match(/domain/i)
-        obj[property] = value
+        obj[property] = toProxiedHost(document.domain)
       else if property?.match(/url/i)
         obj[property] = value
       else if property?.match(/location/i)
-        obj[property] = value
+        obj[property] = proxiedUrl(value)
       else
         obj[property] = value
     else if isHtmlElement(obj)
       if isOneOf('src href action', property)
-        obj[property] = xtnd.proxiedUrl(value)
+        obj[property] = proxiedUrl(value)
       else if isOneOf('innerhtml', property)
         obj[property] = xtnd.proxiedHtml(value)
       else
         obj[property] = value
     else if isWindow(obj) && isOneOf('location, url, href', property)
-      obj[property] = xtnd.proxiedUrl(value)
+      obj[property] = proxiedUrl(value)
     else if isLocation(obj) && isOneOf('location, url, href', property)
-      obj[property] = xtnd.proxiedUrl(value)
+      obj[property] = proxiedUrl(value)
     else
       obj[property] = value
   catch error
@@ -94,19 +96,40 @@ xtnd.assign = (obj, property, value, operation) ->
 
 xtnd.eval = (code) ->
   if _guide.PASSTHROUGH
-    eval(code)
+    code
   else
-    eval(xtnd.proxiedJS(code))
+    xtnd.proxiedJS(code)
 
 xtnd.methodCall = (obj, name, caller, args) ->
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
   if isDocument(obj) && isOneOf('write writeln', name)
-    # handle document.write here...
-    document.write(args[0])
+    # TODO: handle document.write here...
+    if name == 'writeln'
+      document.writeln(args[0])
+    else
+      document.write(args[0])
+  if isXMLHttpRequest(obj)
+    if name == 'open'
+      [method, url, async, user, pass] = args
+      obj.setRequestHeader('X-Xtnd-XHR', url)
+      obj.open(method, proxiedUrl(url), async, user, pass)
+    else
+      obj[name].apply(caller, args)
   else if isHtmlElement(obj) && isOneOf('setattribute getattribute', name)
-    # TODO
-    obj[name].apply(obj, args)
+    attrib = args[0]
+    if name == 'setAttribute'
+      if isOneOf('src href action', attrib)
+        obj.setAttribute(attrib, proxiedUrl(args[1]))
+      else
+        obj[name].apply(caller, args)
+    else if name == 'getAttribute'
+      if isOneOf('src href action', attrib)
+        obj.getAttribute(attrib, normalUrl(args[1]))
+      else
+        obj[name].apply(caller, args)
+    else
+      obj[name].apply(caller, args)
   else
-    obj[name].apply(obj, args)
+    obj[name].apply(caller, args)
 

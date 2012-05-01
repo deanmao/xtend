@@ -59,9 +59,10 @@ class ProxyStream extends stream.Stream
     return value
 
   visitRequestHeader: (name, value) ->
-    # switch name
-    #   when 'accept'
-    #     @_setContentType(value)
+    switch name
+      when 'cookie'
+        # do stuff to cookies here
+        return value
     return value
 
   choosePipe: ->

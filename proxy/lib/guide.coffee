@@ -50,7 +50,7 @@ convertPropertyToLiteral = (binding, node) ->
 class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
-  PASSTHROUGH: true
+  PASSTHROUGH: false
   JS_DEBUG: true
   constructor: (config) ->
     # ------------- copy over config into instance variables
@@ -85,10 +85,7 @@ class Guide
           {type: 'Literal', value: binding.name}
 
     r.find('eval(@x)')
-      .replaceWith('xtnd.eval(@x)')
-
-    r.find('window.eval(@x)')
-      .replaceWith('xtnd.eval(@x)')
+      .replaceWith('eval(xtnd.eval(@x))')
 
     # worry about IE later
     # r.find('new ActiveXObject(@x)')
