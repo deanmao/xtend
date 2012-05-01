@@ -100,23 +100,23 @@ class ContentStream extends stream.Stream
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
     else if @type == HTML
+      @htmlStreamParser = @guide.createHtmlParser()
       @res.header('X-Pipe-Content', 'html')
 
-  # in the future, we should parse & send html chunks
-  # instead of waiting until the end since htmlparser
-  # already has that capability
   write: (chunk, encoding) ->
-    @list.push(chunk.toString())
+    if @type == HTML
+      # we'll stream the html
+      output = @htmlStreamParser(chunk.toString())
+      if output != ''
+        @emit 'data', output
+    else
+      @list.push(chunk.toString())
 
   end: (x) ->
-    data = @list.join('')
-    if @type == HTML
-      output = @guide.convertHtml(data)
-    else if @type == JS
+    if @type == JS
+      data = @list.join('')
       output = @guide.convertJs(data)
-    else
-      output = data
-    @emit 'data', output
+      @emit 'data', output
     @emit 'end'
 
 module.exports = ProxyStream

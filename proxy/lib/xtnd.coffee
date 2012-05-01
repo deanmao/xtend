@@ -104,11 +104,11 @@ xtnd.methodCall = (obj, name, caller, args) ->
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
   if isDocument(obj) && isOneOf('write writeln', name)
-    # TODO: handle document.write here...
+    xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
     if name == 'writeln'
-      document.writeln(args[0])
+      document.writeln(xtnd.documentWriteHtmlParser(args[0]))
     else
-      document.write(args[0])
+      document.write(xtnd.documentWriteHtmlParser(args[0]))
   if isXMLHttpRequest(obj)
     if name == 'open'
       [method, url, async, user, pass] = args

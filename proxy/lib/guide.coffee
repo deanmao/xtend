@@ -123,15 +123,16 @@ class Guide
   # when we want to handle the html streams in chunks instead of one big
   # block.
   createHtmlParser: ->
-    handler = new @html.Handler(@)
-    parser = new @htmlparser.Parser(handler)
-    asdf = (chunk, isDone) ->
-      if isDone
-        parser.done()
-      else
-        parser.parseChunk(chunk)
+    if @REWRITE_HTML
+      handler = new @html.Handler(@)
+      parser = new @htmlparser.Parser(handler)
+      asdf = (chunk) ->
         handler.reset()
-      handler.output
+        parser.parseChunk(chunk)
+        handler.output
+    else
+      asdf = (chunk) ->
+        chunk
 
   htmlVisitor: (location, name) ->
     # ------------- append our special script after head tag
