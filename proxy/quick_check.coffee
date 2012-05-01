@@ -28,12 +28,14 @@ a[3] = x;
 
 unless useManual
   gd = require "./lib/guide"
+  esprima = require('./lib/client/esprima')
+  esprima.multilineStrings = true
   guide = new gd.Guide(
     REWRITE_HTML: true
     REWRITE_JS: true
     fs: require('fs')
     host: 'myapp.dev:3000'
-    esprima: require('esprima')
+    esprima: esprima
     codegen: require('./lib/client/escodegen')
     htmlparser: require('htmlparser')
     xtnd: require('./lib/xtnd')

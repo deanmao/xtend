@@ -32,6 +32,28 @@ ontimeerror
 _attrs.replace /\w+/g, (x) ->
   _jsAttributes[x] = true
 
+encodeChars = exports.encodeChars = (str) ->
+  i = str.length
+  aRet = []
+  while i--
+    iC = str[i].charCodeAt()
+    if iC < 65 || iC > 127 || (iC>90 && iC<97)
+      aRet[i] = '&#'+iC+';'
+    else
+      aRet[i] = str[i]
+  return aRet.join('')
+
+decodeChars = (str) ->
+  str = str.replace(/&#0?0?(\d+);/g, (s, code) ->
+    String.fromCharCode(parseInt(code))
+  ).replace /&(\w+);/g, (s, code) ->
+    switch code
+      when 'amp' then '&'
+      when 'quot' then '"'
+      when 'lt' then '<'
+      when 'gt' then '>'
+      else s
+
 class Handler
   constructor: (guide) ->
     @guide = guide
@@ -44,7 +66,10 @@ class Handler
   done: ->
 
   rewriteJS: (code) ->
-    @guide.convertJs(code)
+    @guide.esprima.multilineStrings = true
+    output = @guide.convertJs(code)
+    @guide.esprima.multilineStrings = false
+    return output
 
   append: (str) ->
     @output = @output + '<' + str + '>'
@@ -96,7 +121,8 @@ class Handler
   writeText: (el) ->
     @visit('inside', el.name)
     if @insideScript
-      @appendRaw(@rewriteJS(el.raw))
+      decoded = decodeChars(el.raw)
+      @appendRaw(@rewriteJS(decoded))
     else
       @appendRaw(el.raw)
 

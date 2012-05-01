@@ -107,7 +107,7 @@ class ContentStream extends stream.Stream
     if @type == HTML
       # we'll stream the html
       output = @htmlStreamParser(chunk.toString())
-      if output != ''
+      if output.length != 0
         @emit 'data', output
     else
       @list.push(chunk.toString())

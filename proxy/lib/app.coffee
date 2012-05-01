@@ -5,6 +5,7 @@ m8 = require('modul8')
 ProxyStream = require('./proxy_stream')
 eyes = require "eyes"
 p = (x) -> eyes.inspect(x)
+require('long-stack-traces')
 
 app = module.exports = express.createServer()
 
@@ -42,23 +43,23 @@ app.get '/x_t_n_d/:name', (req, res) ->
   else
     res.send('')
 
+# For now, don't do any try/catch statements so that all errors
+# will bubble up to the top so we can see :-)
+#
 app.all '*', (req, res) ->
-  try
-    xtnd = app.guide.xtnd
-    # TODO: we shouldn't be using the host header, but it's okay for now.
-    # -- there are cases when we don't have any headers
-    url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
-    req.headers.host = xtnd.toNormalHost(req.headers.host)
-    stream = new ProxyStream(req, res, app.guide)
-    request(
-      url: url
-      method: req.method
-      followRedirect: false
-      body: req.param.body
-      headers: req.headers
-      jar: false # TODO
-      pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
-    ).pipe(stream)
-  catch error
-    console.log(error)
+  xtnd = app.guide.xtnd
+  # TODO: we shouldn't be using the host header, but it's okay for now.
+  # -- there are cases when we don't have any headers
+  url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
+  req.headers.host = xtnd.toNormalHost(req.headers.host)
+  stream = new ProxyStream(req, res, app.guide)
+  request(
+    url: url
+    method: req.method
+    followRedirect: false
+    body: req.param.body
+    headers: req.headers
+    jar: false # TODO
+    pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
+  ).pipe(stream)
 

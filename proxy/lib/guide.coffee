@@ -97,11 +97,12 @@ class Guide
         @jsRewriter.convertToJs(code)
       catch e
         if @JS_DEBUG && @fs
-          prettyCode = @codegen.generate(@esprima.parse(code))
-          @fs.writeFileSync('error_output.js', prettyCode)
           try
-            @jsRewriter.convertToJs(prettyCode)
+            prettyCode = @codegen.generate(@esprima.parse(code))
+            @fs.writeFileSync('error_output.js', prettyCode)
+            return @jsRewriter.convertToJs(prettyCode)
           catch ee
+            @p?(code)
             @p?(ee.stmt)
             throw ee
         else

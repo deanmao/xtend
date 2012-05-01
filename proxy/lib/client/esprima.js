@@ -847,6 +847,14 @@ parseStatement: true, parseSourceElement: true */
     }
 
     // 7.8.4 String Literals
+    exports.multilineStrings = false
+    function isOptionalLineTerminator(ch) {
+      if (exports.multilineStrings) {
+        return false;
+      } else {
+        return isLineTerminator(ch);
+      }
+    }
 
     function scanStringLiteral() {
         var str = '', quote, start, ch, code, unescaped, restore, octal = false;
@@ -931,7 +939,7 @@ parseStatement: true, parseSourceElement: true */
                         ++index;
                     }
                 }
-            } else if (isLineTerminator(ch)) {
+            } else if (isOptionalLineTerminator(ch)) {
                 break;
             } else {
                 str += ch;
@@ -2377,7 +2385,7 @@ parseStatement: true, parseSourceElement: true */
         // Optimize the most common form: 'continue;'.
         if (source[index] === ';') {
             lex();
-            
+
             if (!inIteration) {
                 throwError({}, Messages.IllegalContinue);
             }
@@ -2430,7 +2438,7 @@ parseStatement: true, parseSourceElement: true */
         // Optimize the most common form: 'break;'.
         if (source[index] === ';') {
             lex();
-            
+
             if (!(inIteration || inSwitch)) {
                 throwError({}, Messages.IllegalBreak);
             }
