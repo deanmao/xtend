@@ -44,10 +44,10 @@ unless useManual
     host: 'myapp.dev:3000'
     esprima: esprima
     codegen: require('./lib/client/escodegen')
-    htmlparser: require('./lib/client/htmlparser')
+    htmlparser: require('./lib/client/htmlparser2')
     xtnd: require('./lib/xtnd')
     js: require('./lib/js')
-    html: require('./lib/html')
+    html: require('./lib/html2')
     p: () -> inspect(arguments...)
   )
   if parseHtml

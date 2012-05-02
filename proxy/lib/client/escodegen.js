@@ -786,8 +786,14 @@
     function generate(node, options) {
         if (typeof options !== 'undefined') {
             base = options.base || '';
-            indent = options.indent || '    ';
-            newline = options.newline || '\n';
+            indent = options.indent;
+            if (indent === null) {
+              indent = '    ';
+            }
+            newline = options.newline;
+            if (newline === null) {
+              newline = '\n';
+            }
             parse = options.parse;
         } else {
             base = '';

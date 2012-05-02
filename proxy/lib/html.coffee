@@ -67,9 +67,9 @@ class Handler
 
   done: ->
 
-  rewriteJS: (code) ->
+  rewriteJS: (code, options) ->
     @guide.esprima.multilineStrings = true
-    output = @guide.convertJs(code)
+    output = @guide.convertJs(code, options)
     @guide.esprima.multilineStrings = false
     return output
 
@@ -102,7 +102,7 @@ class Handler
           else if _jsAttributes[key.toLowerCase()]
             # TODO: (do we really need to replace &amp; all the time?)
             value2 = '(function(){' + decodeChars(value) + '})()'
-            data = @rewriteJS(value2)
+            data = @rewriteJS(value2, {indent: '', newline: ''})
             attributes[key] = data
           else
             attributes[key] = value

@@ -8,11 +8,11 @@ app.guide = new gd.Guide(
   host: 'myapp.dev:3000'
   esprima: require('./lib/client/esprima')
   codegen: require('./lib/client/escodegen')
-  htmlparser: require('./lib/client/htmlparser')
+  htmlparser: require('./lib/client/htmlparser2')
   xtnd: require('./lib/xtnd')
   js: require('./lib/js')
   fs: require('fs')
-  html: require('./lib/html')
+  html: require('./lib/html2')
   p: () -> inspect(arguments...)
 )
 

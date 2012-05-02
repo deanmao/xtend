@@ -114,7 +114,7 @@ class Handler
           @appendAttr(attrib, value2)
         else if _jsAttributes[attrib.toLowerCase()]
           value2 = '(function(){' + decodeChars(value) + '})()'
-          @appendAttr(attrib, @rewriteJS(value2, {newline: ' ', indent: ''}))
+          @appendAttr(attrib, @rewriteJS(value2, {newline: '', indent: ''}))
         else
           @appendAttr(attrib, value)
       when 'cdata'
@@ -123,9 +123,10 @@ class Handler
         @appendRaw('<!DOCTYPE' + el.data + '>')
 
   appendAttr: (name, value) ->
-    @output += " " + name + "='" + value + "'"
+    @output += ' ' + name + '="' + (value || '') + '"'
 
   appendStartTag: (el) ->
+    @appendCloseStartTag()
     @closeStartTag = true
     @output += '<' + el.name
 
