@@ -57,14 +57,17 @@ app.all '*', (req, res) ->
     isScript = true
   url = xtnd.normalUrl('http', req.headers.host, originalUrl)
   req.headers.host = xtnd.toNormalHost(req.headers.host)
-  stream = new ProxyStream(req, res, app.guide)
-  request(
-    url: url
-    method: req.method
-    followRedirect: false
-    body: req.param.body
-    headers: req.headers
-    jar: false # TODO
-    pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
-  ).pipe(stream)
+  if url.match(/pulse360.com/)
+    res.send('')
+  else
+    stream = new ProxyStream(req, res, app.guide)
+    request(
+      url: url
+      method: req.method
+      followRedirect: false
+      body: req.param.body
+      headers: req.headers
+      jar: false # TODO
+      pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
+    ).pipe(stream)
 

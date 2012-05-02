@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-document.write("asdf", 234)
+document.write()
   """
 
 class Handler
@@ -68,4 +68,4 @@ else
       .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
         if node.name == 'method' && binding.type == 'Identifier'
           {type: 'Literal', value: binding.name}
-    console.log(r.convertToJs(code, {newline: ''}))
+    console.log(r.convertToJs(code, {newline: '', indent: ''}))

@@ -162,6 +162,8 @@ class Rule
             do (item) =>
               parent[i] = @_convertBinding(item, node)
               i = i + 1
+          if binding.length == 0
+            delete parent[key]
         else
           parent[key] = @_convertBinding(binding, node)
     )

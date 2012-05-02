@@ -121,6 +121,7 @@ xtnd.eval = (code) ->
     xtnd.proxiedJS(code)
 
 xtnd.methodCall = (obj, name, caller, args) ->
+  caller = obj
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
   if isDocument(obj) && isOneOf('write writeln', name)
