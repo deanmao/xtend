@@ -16,8 +16,11 @@ HTML = 3
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
   writable: true
-  constructor: (req, res, guide) ->
+  constructor: (req, res, guide, isScript) ->
     @type = BINARY
+    @isScript = isScript
+    if @isScript
+      @type = JS
     @guide = guide
     @res = res
     @req = req
@@ -26,7 +29,7 @@ class ProxyStream extends stream.Stream
         req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
 
   _setContentType: (value) ->
-    if value?.match(/html/i)
+    if @isScript || value?.match(/html/i)
       @type = HTML
     else if value?.match(/javascript/i)
       @type = JS
@@ -100,7 +103,7 @@ class ContentStream extends stream.Stream
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
     else if @type == HTML
-      @htmlStreamParser = @guide.createHtmlParser()
+      @htmlStreamParser = @guide.createHtmlParser(@req.headers.host + '---' + @req.originalUrl)
       @res.header('X-Pipe-Content', 'html')
 
   write: (chunk, encoding) ->

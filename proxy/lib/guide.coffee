@@ -20,15 +20,9 @@ rHot = (prop) ->
   rHot.list ?= listToHash 'location top parent'
   prop && _hotReferences[prop.toLowerCase()]
 
-checkHotPropertyLiteral = (name, node) ->
-  if name == 'prop' && node.type == 'Literal'
-    if !pHot(node.value)
-      return false
-  return true
-
 checkHotMethod = (name, node) ->
   if name == 'method' && node.type == 'Identifier'
-    if !mHot(node.value)
+    if mHot(node.value)
       return false
   return true
 
@@ -52,6 +46,7 @@ class Guide
   REWRITE_JS: true
   PASSTHROUGH: false
   JS_DEBUG: true
+  FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT.js'
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -79,10 +74,11 @@ class Guide
     r.find('@obj[@prop] += @rhs', skipNumericProperties)
       .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
 
-    r.find('@obj.@method(@args+)', checkHotMethod)
-      .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
-        if node.name == 'method' && binding.type == 'Identifier'
-          {type: 'Literal', value: binding.name}
+    # TODO FIXME:
+    # r.find('@obj.@method(@args+)', checkHotMethod)
+    #   .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
+    #     if node.name == 'method' && binding.type == 'Identifier'
+    #       {type: 'Literal', value: binding.name}
 
     r.find('eval(@x)')
       .replaceWith('eval(xtnd.eval(@x))')
@@ -103,6 +99,7 @@ class Guide
             return @jsRewriter.convertToJs(prettyCode, options)
           catch ee
             @p?(code)
+            @p?(options)
             @p?(ee.stmt)
             throw ee
         else
@@ -123,9 +120,9 @@ class Guide
   # This one is primarly for doing chunked content, to be used later
   # when we want to handle the html streams in chunks instead of one big
   # block.
-  createHtmlParser: ->
+  createHtmlParser: (url)->
     if @REWRITE_HTML
-      handler = new @html.Handler(@)
+      handler = new @html.Handler(@, url)
       parser = new @htmlparser.Parser(handler)
       asdf = (chunk) ->
         handler.reset()
@@ -135,10 +132,14 @@ class Guide
       asdf = (chunk) ->
         chunk
 
-  htmlVisitor: (location, name) ->
+  htmlVisitor: (location, name, context) ->
     # ------------- append our special script after head tag
-    if name == 'head' && location == 'after'
-        '<script src="/x_t_n_d/scripts"></script>'
+    if name == 'script' && location == 'before' && !context.insertedSpecialJS
+      context.insertedSpecialJS = true
+      '<script src="/x_t_n_d/scripts"></script>'
+    else if name == 'head' && location == 'after' && !context.insertedSpecialJS
+      context.insertedSpecialJS = true
+      '<script src="/x_t_n_d/scripts"></script>'
 
   p: () ->
     # default to disable debug print

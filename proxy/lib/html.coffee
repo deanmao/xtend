@@ -57,8 +57,9 @@ decodeInlineChars = (str) ->
     String.fromCharCode(parseInt(code))
 
 class Handler
-  constructor: (guide) ->
+  constructor: (guide, url) ->
     @guide = guide
+    @url = url
     @visitor = guide.htmlVisitor
     @output = ''
 
@@ -68,9 +69,14 @@ class Handler
   done: ->
 
   rewriteJS: (code, options) ->
-    @guide.esprima.multilineStrings = true
-    output = @guide.convertJs(code, options)
-    @guide.esprima.multilineStrings = false
+    try
+      @guide.esprima.multilineStrings = true
+      output = @guide.convertJs(code, options)
+    catch e
+      @guide.p(@url)
+      throw e
+    finally
+      @guide.esprima.multilineStrings = false
     return output
 
   append: (str) ->
@@ -80,7 +86,7 @@ class Handler
     @output += str
 
   visit: (location, name) ->
-    data = @visitor?(location, name)
+    data = @visitor?(location, name, @)
     if data
       @appendRaw(data)
 

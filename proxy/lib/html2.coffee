@@ -57,11 +57,13 @@ decodeInlineChars = (str) ->
     String.fromCharCode(parseInt(code))
 
 class Handler
-  constructor: (guide) ->
+  constructor: (guide, url) ->
     @guide = guide
+    @url = url
     @visitor = guide.htmlVisitor
     @output = ''
     @closeStartTag = false
+    @counts = {}
 
   reset: ->
     @output = ''
@@ -72,13 +74,18 @@ class Handler
     console.log(err)
 
   rewriteJS: (code, options) ->
-    @guide.esprima.multilineStrings = true
-    output = @guide.convertJs(code, options)
-    @guide.esprima.multilineStrings = false
+    try
+      @guide.esprima.multilineStrings = true
+      output = @guide.convertJs(code, options)
+    catch e
+      @guide.p(@url)
+      throw e
+    finally
+      @guide.esprima.multilineStrings = false
     return output
 
   visit: (location, name) ->
-    data = @visitor?(location, name)
+    data = @visitor?(location, name, @)
     if data
       @appendRaw(data)
 
@@ -88,6 +95,7 @@ class Handler
   write: (el) ->
     switch el.type
       when 'text'
+        @appendCloseStartTag()
         @visit('inside', @tagName)
         if @insideScript
           decoded = decodeInlineChars(el.data)
@@ -104,6 +112,7 @@ class Handler
             @tagName = el.name
           else
             @tagName = el.name
+          @appendCloseStartTag()
           @visit('before', @tagName)
           @appendStartTag(el)
       when 'attr'
@@ -111,6 +120,8 @@ class Handler
         value = el.data
         if _tags[@tagName] == attrib
           value2 = @guide.xtnd.proxiedUrl(value)
+          if @tagName.match(/script/i)
+            value2 = value2 + @guide.FORCE_SCRIPT_SUFFIX
           @appendAttr(attrib, value2)
         else if _jsAttributes[attrib.toLowerCase()]
           value2 = '(function(){' + decodeChars(value) + '})()'
@@ -126,7 +137,6 @@ class Handler
     @output += ' ' + name + '="' + (value || '') + '"'
 
   appendStartTag: (el) ->
-    @appendCloseStartTag()
     @closeStartTag = true
     @output += '<' + el.name
 

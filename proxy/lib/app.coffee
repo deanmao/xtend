@@ -50,7 +50,12 @@ app.all '*', (req, res) ->
   xtnd = app.guide.xtnd
   # TODO: we shouldn't be using the host header, but it's okay for now.
   # -- there are cases when we don't have any headers
-  url = xtnd.normalUrl('http', req.headers.host, req.originalUrl)
+  originalUrl = req.originalUrl
+  isScript = false
+  if originalUrl.indexOf(app.guide.FORCE_SCRIPT_SUFFIX) != -1
+    originalUrl = originalUrl.replace(app.guide.FORCE_SCRIPT_SUFFIX, '')
+    isScript = true
+  url = xtnd.normalUrl('http', req.headers.host, originalUrl)
   req.headers.host = xtnd.toNormalHost(req.headers.host)
   stream = new ProxyStream(req, res, app.guide)
   request(
