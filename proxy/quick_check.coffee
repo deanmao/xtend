@@ -23,23 +23,15 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-a[3] = x;
+
   """
 
 class Handler
   reset: ->
   done: ->
-  writeTag: (el) ->
-    console.log('--- name:')
-    console.log(el.name)
-    console.log(el.attribs)
-  writeText: (el) ->
-    console.log('--- text:')
-    console.log(el.raw)
-  writeComment: (el) ->
-  writeDirective: (el) ->
-    console.log('--- directive:')
-    console.log(el.raw)
+  write: (node) ->
+    console.log(node)
+  error: ->
 
 unless useManual
   gd = require "./lib/guide"
@@ -52,7 +44,7 @@ unless useManual
     host: 'myapp.dev:3000'
     esprima: esprima
     codegen: require('./lib/client/escodegen')
-    htmlparser: require('htmlparser')
+    htmlparser: require('./lib/client/htmlparser')
     xtnd: require('./lib/xtnd')
     js: require('./lib/js')
     html: require('./lib/html')
@@ -64,7 +56,7 @@ unless useManual
     console.log(guide.convertJs(code))
 else
   if parseHtml
-    htmlparser = require('./lib/client/htmlparser')
+    htmlparser = require('./lib/client/htmlparser2')
     handler = new Handler()
     parser = new htmlparser.Parser(handler)
     parser.parseComplete(code)

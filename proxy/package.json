@@ -5,14 +5,12 @@
   , "dependencies": {
       "express": "2.5.8"
     , "request": ">= 2.9"
-    , "underscore": ""
-    , "htmlparser": ""
-    , "esprima": ""
     , "eyes": ""
     , "vows": ""
     , "optimist": ""
     , "coffee-script": ""
     , "modul8": ""
+    , "long-stack-traces": ""
     , "directory-tree-watcher": ""
   }
 }

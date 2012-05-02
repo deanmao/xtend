@@ -91,16 +91,16 @@ class Guide
     # r.find('new ActiveXObject(@x)')
     #   .replaceWith('new xtnd.ActiveXObject(@x)')
 
-  convertJs: (code) ->
+  convertJs: (code, options) ->
     if @REWRITE_JS
       try
-        @jsRewriter.convertToJs(code)
+        @jsRewriter.convertToJs(code, options)
       catch e
         if @JS_DEBUG && @fs
           try
             prettyCode = @codegen.generate(@esprima.parse(code))
             @fs.writeFileSync('error_output.js', prettyCode)
-            return @jsRewriter.convertToJs(prettyCode)
+            return @jsRewriter.convertToJs(prettyCode, options)
           catch ee
             @p?(code)
             @p?(ee.stmt)

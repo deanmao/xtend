@@ -48,8 +48,8 @@ class Rewriter
     )
     root
 
-  convertToJs: (js) ->
-    @codegen.generate(@convert(js))
+  convertToJs: (js, options) ->
+    @codegen.generate(@convert(js), options)
 
 namePrefix = 'xtend_pattern__'
 Hole =

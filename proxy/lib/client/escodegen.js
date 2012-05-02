@@ -40,6 +40,7 @@
         base,
         indent,
         extra,
+        newline,
         parse;
 
     Syntax = {
@@ -226,12 +227,12 @@
         } else {
             previousBase = base;
             base += indent;
-            result = '\n' + addIndent(generateStatement(stmt));
+            result = newline + addIndent(generateStatement(stmt));
             base = previousBase;
         }
 
         if (suffix) {
-            return result + '\n' + addIndent('');
+            return result + newline + addIndent('');
         }
         return result;
     }
@@ -397,7 +398,7 @@
                 result = '[]';
                 break;
             }
-            result = '[\n';
+            result = '['+newline;
             previousBase = base;
             base += indent;
             for (i = 0, len = expr.elements.length; i < len; i += 1) {
@@ -410,11 +411,11 @@
                     result += addIndent(generateExpression(expr.elements[i], Precedence.Assignment));
                 }
                 if ((i + 1) < len) {
-                    result += ',\n';
+                    result += ','+newline;
                 }
             }
             base = previousBase;
-            result += '\n' + addIndent(']');
+            result += newline + addIndent(']');
             break;
 
         case Syntax.Property:
@@ -432,17 +433,17 @@
                 result = '{}';
                 break;
             }
-            result = '{\n';
+            result = '{'+newline;
             previousBase = base;
             base += indent;
             for (i = 0, len = expr.properties.length; i < len; i += 1) {
                 result += addIndent(generateExpression(expr.properties[i]));
                 if ((i + 1) < len) {
-                    result += ',\n';
+                    result += ','+newline;
                 }
             }
             base = previousBase;
-            result += '\n' + addIndent('}');
+            result += newline + addIndent('}');
             break;
 
         case Syntax.ThisExpression:
@@ -503,12 +504,12 @@
 
             switch (stmt.type) {
             case Syntax.BlockStatement:
-                result = '{\n';
+                result = '{'+newline;
 
                 previousBase = base;
                 base += indent;
                 for (i = 0, len = stmt.body.length; i < len; i += 1) {
-                    result += addIndent(generateStatement(stmt.body[i])) + '\n';
+                    result += addIndent(generateStatement(stmt.body[i])) + newline;
                 }
                 base = previousBase;
 
@@ -609,11 +610,11 @@
             case Syntax.SwitchStatement:
                 previousBase = base;
                 base += indent;
-                result = 'switch (' + generateExpression(stmt.discriminant) + ') {\n';
+                result = 'switch (' + generateExpression(stmt.discriminant) + ') {'+newline;
                 base = previousBase;
                 if (stmt.cases) {
                     for (i = 0, len = stmt.cases.length; i < len; i += 1) {
-                        result += addIndent(generateStatement(stmt.cases[i])) + '\n';
+                        result += addIndent(generateStatement(stmt.cases[i])) + newline;
                     }
                 }
                 result += addIndent('}');
@@ -636,7 +637,7 @@
                 }
 
                 for (; i < len; i += 1) {
-                    result += '\n' + addIndent(generateStatement(stmt.consequent[i]));
+                    result += newline + addIndent(generateStatement(stmt.consequent[i]));
                 }
 
                 base = previousBase;
@@ -726,7 +727,7 @@
                 for (i = 0, len = stmt.body.length; i < len; i += 1) {
                     result += generateStatement(stmt.body[i]);
                     if ((i + 1) < len) {
-                        result += '\n';
+                        result += newline;
                     }
                 }
                 break;
@@ -786,10 +787,12 @@
         if (typeof options !== 'undefined') {
             base = options.base || '';
             indent = options.indent || '    ';
+            newline = options.newline || '\n';
             parse = options.parse;
         } else {
             base = '';
             indent = '    ';
+            newline = '\n';
             parse = null;
         }
 
