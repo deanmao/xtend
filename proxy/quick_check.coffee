@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-
+document.write("asdf", 234)
   """
 
 class Handler
@@ -36,7 +36,6 @@ class Handler
 unless useManual
   gd = require "./lib/guide"
   esprima = require('./lib/client/esprima')
-  esprima.multilineStrings = true
   guide = new gd.Guide(
     REWRITE_HTML: true
     REWRITE_JS: true
@@ -62,9 +61,11 @@ else
     parser.parseComplete(code)
   else
     js = require('./lib/js')
-    esprima = require 'esprima'
-    codegen = require 'escodegen'
+    esprima = require('./lib/client/esprima')
+    codegen = require './lib/client/escodegen'
     r = new js.Rewriter(esprima, codegen)
-    r.find('@x[@prop] = @z')
-      .replaceWith("xtnd.assign(@x, @prop, @z, 'asdf')", visitor)
-    console.log(r.convertToJs(code))
+    r.find('@obj.@method(@args+)')
+      .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
+        if node.name == 'method' && binding.type == 'Identifier'
+          {type: 'Literal', value: binding.name}
+    console.log(r.convertToJs(code, {newline: ''}))

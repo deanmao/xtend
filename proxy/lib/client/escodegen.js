@@ -787,11 +787,11 @@
         if (typeof options !== 'undefined') {
             base = options.base || '';
             indent = options.indent;
-            if (indent === null) {
+            if (indent == null) {
               indent = '    ';
             }
             newline = options.newline;
-            if (newline === null) {
+            if (newline == null) {
               newline = '\n';
             }
             parse = options.parse;
