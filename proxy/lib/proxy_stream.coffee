@@ -17,10 +17,10 @@ HTML = 3
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
   writable: true
-  constructor: (req, res, guide, isScript, protocol, host) ->
+  constructor: (req, res, guide, isScript, protocol) ->
     @type = BINARY
     @protocol = protocol
-    @host = host
+    @host = req.headers.host
     @isScript = isScript
     if @isScript
       @type = JS

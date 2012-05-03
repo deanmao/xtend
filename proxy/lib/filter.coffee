@@ -5,9 +5,9 @@ module.exports = (options) ->
   guide = options.guide
   protocol = options.protocol
   xtnd = guide.xtnd
-  myfilter = (req, res, next) ->
+  returnVal = (req, res, next) ->
     originalUrl = req.originalUrl
-    if originalUrl?.match(/x_t_n_d/)
+    if req.url.match(/^\/x_t_n_d/)
       next()
     else
       isScript = false
@@ -16,7 +16,7 @@ module.exports = (options) ->
         isScript = true
       url = xtnd.normalUrl(protocol, req.headers.host, originalUrl)
       req.headers.host = xtnd.toNormalHost(req.headers.host)
-      stream = new ProxyStream(req, res, guide, isScript, protocol, req.headers.host)
+      stream = new ProxyStream(req, res, guide, isScript, protocol)
       remoteReq = request(
         url: url
         method: req.method
@@ -29,4 +29,3 @@ module.exports = (options) ->
         remoteReq.emit 'data', chunk
       req.on 'end', ->
         remoteReq.emit 'end'
-    return myfilter
