@@ -21,7 +21,7 @@ class ProxyStream extends stream.Stream
     @isScript = isScript
     if @isScript
       @type = JS
-    @guide = guide
+    @g = guide
     @res = res
     @req = req
     for own k,v of req.headers
@@ -51,7 +51,7 @@ class ProxyStream extends stream.Stream
         if value?.match(/(gzip|deflate)/i)
           @compressed = true
       when 'location'
-        return @guide.xtnd.proxiedUrl(value)
+        return @g.xtnd.proxiedUrl(value)
       when 'content-type'
         @_setContentType(value)
         if @type == JS || @type == HTML
@@ -74,12 +74,12 @@ class ProxyStream extends stream.Stream
         # if the stream came in compressed, we'll send it back out
         # compressed
         @res.header('X-Pipe', 'compressed')
-        stream = new ContentStream(@req, @res, @type, @guide)
+        stream = new ContentStream(@req, @res, @type, @g)
         @pipe(zlib.createGunzip()).pipe(stream)
         stream.pipe(zlib.createGzip()).pipe(@res)
       else
         @res.header('X-Pipe', 'content')
-        stream = new ContentStream(@req, @res, @type, @guide)
+        stream = new ContentStream(@req, @res, @type, @g)
         @pipe(stream)
         stream.pipe(@res)
     else
@@ -96,14 +96,14 @@ class ContentStream extends stream.Stream
   writable: true
   constructor: (req, res, type, guide) ->
     @type = type
-    @guide = guide
+    @g = guide
     @res = res
     @req = req
     @list = []
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
     else if @type == HTML
-      @htmlStreamParser = @guide.createHtmlParser(@req.headers.host + '---' + @req.originalUrl)
+      @htmlStreamParser = @g.createHtmlParser(@req.headers.host + '---' + @req.originalUrl)
       @res.header('X-Pipe-Content', 'html')
 
   write: (chunk, encoding) ->
@@ -122,14 +122,14 @@ class ContentStream extends stream.Stream
       # else, we will try to parse it with json and if it fails
       # go back to JS again
       if data.match(/(function|var)/)
-        output = @guide.convertJs(data)
+        output = @g.convertJs(data)
         @emit 'data', output
       else
         try
           JSON.parse(data)
           @emit 'data', data
         catch e
-          output = @guide.convertJs(data)
+          output = @g.convertJs(data)
           @emit 'data', output
     @emit 'end'
 

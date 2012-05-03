@@ -1,67 +1,8 @@
-# if typeof(exports) != 'undefined'
-#   eyes = require "eyes"
-#   p = (x) -> eyes.inspect(x)
-
-_tags = exports.LOCATION_TAGS = {
-  embed: 'src'
-  a: 'href'
-  img: 'src'
-  script: 'src'
-  link: 'href'
-  input: 'action'
-  iframe: 'src'
-  frame: 'src'
-  area: 'href'
-  base: 'href'
-}
-
-_jsAttributes = exports.JS_ATTRIBUTES = {}
-_attrs = """
-onblur onchange onclick ondblclick onfocus onkeydown onkeypress onkeyup onload
-onmousedown onmousemove onmouseout onmouseover onmouseup onreset onselect onsubmit
-onunload onabort onactivate onafterprint onafterupdate onbeforeactivate
-onbeforecopy onbeforecut onbeforedeactivate onbeforeeditfocus onbeforepaste
-onbeforeprint onbeforeunload onbeforeupdate onbounce oncontextmenu oncontrolselect
-oncopy oncut ondataavailable ondatasetchanged ondeactivate ondrag ondragend
-ondragenter ondragleave ondragover ondragstart ondrop onerror onerrorupdate
-onfilterchange onfinish onfocusin onfocusout onhelp onlayoutcomplete onlosecapture
-onmouseenter onmouseleave onmousewheel onmove onmoveend onmovestart onpaste
-onpropertychange onreadystatechanged onresize onresizeend onresizestart onrowenter
-onrowexit onrowsdelete onrowsinserted onscroll onselectionchange onstart onstop
-ontimeerror
-"""
-_attrs.replace /\w+/g, (x) ->
-  _jsAttributes[x] = true
-
-encodeChars = exports.encodeChars = (str) ->
-  i = str.length
-  aRet = []
-  while i--
-    iC = str[i].charCodeAt()
-    if iC < 65 || iC > 127 || (iC>90 && iC<97)
-      aRet[i] = '&#'+iC+';'
-    else
-      aRet[i] = str[i]
-  return aRet.join('')
-
-decodeChars = (str) ->
-  decodeInlineChars(str).replace /&(\w+);/g, (s, code) ->
-    switch code
-      when 'amp' then '&'
-      when 'quot' then '"'
-      when 'lt' then '<'
-      when 'gt' then '>'
-      else s
-
-decodeInlineChars = (str) ->
-  str.replace /&#0?0?(\d+);/g, (s, code) ->
-    String.fromCharCode(parseInt(code))
-
 class Handler
-  constructor: (guide, url) ->
-    @guide = guide
+  constructor: (g, url) ->
+    @g = g
     @url = url
-    @visitor = guide.htmlVisitor
+    @visitor = g.htmlVisitor
     @output = ''
 
   reset: ->
@@ -71,13 +12,13 @@ class Handler
 
   rewriteJS: (code, options) ->
     try
-      @guide.esprima.multilineStrings = true
-      output = @guide.convertJs(code, options)
+      @g.esprima.multilineStrings = true
+      output = @g.convertJs(code, options)
     catch e
-      @guide.p(@url)
+      @g.p(@url)
       throw e
     finally
-      @guide.esprima.multilineStrings = false
+      @g.esprima.multilineStrings = false
     return output
 
   append: (str) ->
@@ -100,15 +41,14 @@ class Handler
       @insideScript = false
     else
       attributes = {}
-      matchingAttrib = _tags[el.name]
       for key, value of el.attribs
         do (key, value) =>
-          if matchingAttrib == key.toLowerCase()
-            value2 = @guide.xtnd.proxiedUrl(value)
+          if @g.tester.isHotTagAttribute(el.name, key)
+            value2 = @g.xtnd.proxiedUrl(value)
             attributes[key] = value2
-          else if _jsAttributes[key.toLowerCase()]
+          else if @g.tester.isInlineJsAttribute(key)
             # TODO: (do we really need to replace &amp; all the time?)
-            value2 = '(function(){' + decodeChars(value) + '})()'
+            value2 = '(function(){' + @g.util.decodeChars(value) + '})()'
             data = @rewriteJS(value2, {indent: '', newline: ''})
             attributes[key] = data
           else
@@ -131,7 +71,7 @@ class Handler
   writeText: (el) ->
     @visit('inside', el.name)
     if @insideScript
-      decoded = decodeInlineChars(el.raw)
+      decoded = @g.util.decodeInlineChars(el.raw)
       @appendRaw(@rewriteJS(decoded))
     else
       @appendRaw(el.raw)

@@ -13,6 +13,8 @@ app.setGuide(new gd.Guide(
   js: require('./lib/js')
   fs: require('fs')
   html: require('./lib/html2')
+  tester: require('./lib/client/property_tester')
+  util: require('./lib/client/util')
   p: () -> inspect(arguments...)
 ))
 

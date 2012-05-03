@@ -1,7 +1,3 @@
-# if typeof(exports) != 'undefined'
-#   eyes = require "eyes"
-#   p = (x) -> eyes.inspect(x)
-
 traverse = exports.traverse = (object, visitor, parent, key) ->
   if visitor.call(null, object, parent, key) == false
     return
@@ -11,10 +7,10 @@ traverse = exports.traverse = (object, visitor, parent, key) ->
         traverse(child, visitor, object, key)
 
 class Rewriter
-  constructor: (esprima, codegen, guide) ->
+  constructor: (esprima, codegen, g) ->
     @esprima = esprima
     @codegen = codegen
-    @guide = guide
+    @g = g
     @ruleCache = {}
     @rules = []
 
@@ -27,7 +23,7 @@ class Rewriter
     rule
 
   convert: (js) ->
-    if @guide?.JS_DEBUG
+    if @g?.JS_DEBUG
       root = @esprima.parse(js, {loc: true})
     else
       root = @esprima.parse(js)

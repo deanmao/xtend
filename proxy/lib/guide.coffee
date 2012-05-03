@@ -1,31 +1,4 @@
 # private methods & variables:
-listToHash = (str) ->
-  hash = {}
-  str.replace /\w+/g, (x) ->
-    hash[x.toLowerCase()] = true
-  hash
-
-pHot = (prop) ->
-  pHot.list ?= listToHash """
-    location url href cookie domain src innerhtml host hostname history documenturi
-    baseuri port referrer parent top opener window parentwindow action
-  """
-  prop && pHot.list[prop.toLowerCase()]
-
-mHot = (prop) ->
-  mHot.list ?= listToHash 'setattribute write writeln getattribute open setrequestheader'
-  prop && mHot.list[prop.toLowerCase()]
-
-rHot = (prop) ->
-  rHot.list ?= listToHash 'location top parent'
-  prop && _hotReferences[prop.toLowerCase()]
-
-checkHotMethod = (name, node) ->
-  if name == 'method' && node.type == 'Identifier'
-    if mHot(node.value)
-      return false
-  return true
-
 skipNumericProperties = (name, node) ->
   if name == 'prop' && node.name == undefined && node.type == 'Literal'
     return false
@@ -74,7 +47,12 @@ class Guide
     r.find('@obj[@prop] += @rhs', skipNumericProperties)
       .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
 
-    # TODO FIXME:
+    checkHotMethod = (name, node) =>
+      if name == 'method' && node.type == 'Identifier'
+        if @tester.isHotMethod(node.value)
+          return false
+      return true
+
     r.find('@obj.@method(@args+)', checkHotMethod)
       .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
         if node.name == 'method' && binding.type == 'Identifier'

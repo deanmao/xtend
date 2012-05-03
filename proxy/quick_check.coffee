@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-document.write()
+a.b = c.d = e.f = g.h;
   """
 
 class Handler
