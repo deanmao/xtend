@@ -124,7 +124,9 @@ xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
-  if isDocument(obj) && isOneOf('write writeln', name)
+  if isLocation(obj) && isOneOf('replace', name)
+    obj[name].apply(caller, [proxiedUrl(args[0])])
+  else if isDocument(obj) && isOneOf('write writeln', name)
     xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
     if name == 'writeln'
       document.writeln(xtnd.documentWriteHtmlParser(args[0]))
