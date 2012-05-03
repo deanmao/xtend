@@ -17,7 +17,8 @@ convertPropertyToLiteral = (binding, node) ->
 class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
-  # DEBUG_HEADERS: true
+  # DEBUG_REQ_HEADERS: true
+  # DEBUG_RES_HEADERS: true
   PASSTHROUGH: false
   JS_DEBUG: true
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT.js'
@@ -34,8 +35,13 @@ class Guide
     @xtnd.setGuide(@)
     # ------------- create js rewrite rules
     # assignment, but skip function assignments like: a[x] = function(){}
-    r.find('@obj.@prop = @rhs', skipRhsFunctionExpressions)
-      .replaceWith("xtnd.assign(@obj, @prop, @rhs)", convertPropertyToLiteral)
+    r.find('@obj.@prop = @rhs', (name, node) =>
+      if name == 'rhs' && node.type == 'FunctionExpression'
+        return false
+      if name == 'prop' && node.type == 'Identifier' && !@tester.isHotProperty(node.name)
+        return false
+      return true
+    ).replaceWith("xtnd.assign(@obj, @prop, @rhs)", convertPropertyToLiteral)
 
     # object field accessor assignment, but skip numeric fields like: obj[3]
     r.find('@obj[@prop] = @rhs', skipNumericProperties)
@@ -48,9 +54,8 @@ class Guide
       .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
 
     checkHotMethod = (name, node) =>
-      if name == 'method' && node.type == 'Identifier'
-        if @tester.isHotMethod(node.value)
-          return false
+      if name == 'method' && node.type == 'Identifier' && !@tester.isHotMethod(node.value)
+        return false
       return true
 
     r.find('@obj.@method(@args+)', checkHotMethod)
@@ -76,9 +81,10 @@ class Guide
             @fs.writeFileSync('error_output.js', prettyCode)
             return @jsRewriter.convertToJs(prettyCode, options)
           catch ee
+            @p?('bad js for Guide.convertJs:')
             @p?(code)
-            @p?(options)
-            @p?(ee.stmt)
+            if ee?.stmt
+              @p?(ee.stmt)
             throw ee
         else
           # not sure if we should throw error here or silently fail

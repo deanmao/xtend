@@ -19,9 +19,6 @@ class ProxyStream extends stream.Stream
   writable: true
   constructor: (req, res, guide, isScript, protocol) ->
     @g = guide
-    if @g.DEBUG_HEADERS
-      console.log('Unmodified Request headers --------->>>')
-      p(req.headers)
     @type = BINARY
     @protocol = protocol
     @host = req.headers.host
@@ -34,7 +31,7 @@ class ProxyStream extends stream.Stream
     for own k,v of req.headers
       do (k,v) =>
         req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
-    if @g.DEBUG_HEADERS
+    if @g.DEBUG_REQ_HEADERS
       console.log('Request headers --------->>>')
       p(req.headers)
 
@@ -52,7 +49,7 @@ class ProxyStream extends stream.Stream
       @type = JS
 
   pipefilter: (resp, dest) ->
-    if @g.DEBUG_HEADERS
+    if @g.DEBUG_RES_HEADERS
       console.log('Unmodified Response headers <<<---------')
       p(resp.headers)
     for own k,v of resp.headers
@@ -64,13 +61,16 @@ class ProxyStream extends stream.Stream
           @res.removeHeader(k)
     @res.statusCode = resp.statusCode
     cookies = resp.headers['set-cookie']
+    newCookies = []
     if cookies
       for cookie in cookies
         do (cookie) =>
-          c = cookie.split(';')[0]
-          parts = c.split('=')
-          @res.cookie(parts[0], parts[1])
-    if @g.DEBUG_HEADERS
+          newCookies.push(cookie.replace /domain=(.+)/, (x, host) =>
+            'domain=' + @g.xtnd.toProxiedHost(host)
+          )
+      @res.removeHeader('set-cookie')
+      @res.setHeader('set-cookie', newCookies)
+    if @g.DEBUG_RES_HEADERS
       console.log('Response headers <<<---------')
       p(@res._headers)
     @choosePipe()
@@ -166,8 +166,13 @@ class ContentStream extends stream.Stream
           JSON.parse(data)
           @emit 'data', data
         catch e
-          output = @g.convertJs(data)
-          @emit 'data', output
+          try
+            output = @g.convertJs(data)
+            @emit 'data', output
+          catch ee
+            console.log('bad js:')
+            console.log(data)
+            @emit 'data', data
     @emit 'end'
 
 module.exports = ProxyStream
