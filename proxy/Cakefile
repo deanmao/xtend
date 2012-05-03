@@ -18,7 +18,7 @@ dns = ->
 
 start = ->
   node?.kill()
-  options = ['development.coffee']
+  options = ['lib/development.coffee']
   node = stream 'coffee', options
 
 task 'run', 'Run server', ->
