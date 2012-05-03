@@ -9,6 +9,10 @@ like this:
     ipfw add 100 fwd 127.0.0.1,3000 tcp from any to me 80
     ipfw add 101 fwd 127.0.0.1,3443 tcp from any to me 443
 
+See this guide on making self-signed ssl certs always trust:
+
+http://www.robpeck.com/2010/10/google-chrome-mac-os-x-and-self-signed-ssl-certificates/
+
 Type this to start the proxy server:
 
     cake run
