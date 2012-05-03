@@ -1,6 +1,13 @@
 request = require('request')
 ProxyStream = require('./proxy_stream')
 
+# This is a connect module that performs the remote request if the url
+# is not an "internal" url.
+#
+# Internal urls begin with a path like: /x_t_n_d
+#
+# All other requests have their data stream & headers sent to the remote
+# server, after being slightly modified.
 module.exports = (options) ->
   guide = options.guide
   protocol = options.protocol

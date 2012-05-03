@@ -38,6 +38,17 @@ This is the entry point for modul8 for converting all client-side js
 into a single file.  Here we will initialize parameters specific to the
 browser client.
 
+### property_tester.coffee
+
+This is mainly a utility script for testing strings of values against a
+set of predefined property sets.  Basically we use this to determine if
+a method/attribute requires processing.
+
+
+### util.coffee
+
+Contains a bunch of shared code that doesn't belong anywhere else.
+
 ### dns_server.coffee
 
 Primary used for development mode.  One should create a file called
@@ -56,8 +67,11 @@ understand.
 
 ### html.coffee
 
-Rewriter for html.  Currently very basic and doesn't handle corner cases
-well.
+Rewriter for html.  This defines the handler used by htmlparser 1.x
+
+### html.coffee
+
+Rewriter for html.  This defines the handler used by htmlparser 2.x
 
 ### js.coffee
 
