@@ -10,6 +10,7 @@ express = require('express')
 guide = new gd.Guide(
   REWRITE_HTML: true
   REWRITE_JS: true
+  # DEBUG_HEADERS: true
   host: 'myapp.dev'
   esprima: require('./lib/client/esprima')
   codegen: require('./lib/client/escodegen')

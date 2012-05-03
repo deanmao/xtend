@@ -18,74 +18,72 @@ HTML = 3
 class ProxyStream extends stream.Stream
   writable: true
   constructor: (req, res, guide, isScript, protocol) ->
+    @g = guide
+    if @g.DEBUG_HEADERS
+      console.log('Unmodified Request headers --------->>>')
+      p(req.headers)
     @type = BINARY
     @protocol = protocol
     @host = req.headers.host
     @isScript = isScript
     if @isScript
       @type = JS
-    @g = guide
     @proxiedHost = @g.xtnd.toProxiedHost(@host)
     @res = res
     @req = req
     for own k,v of req.headers
       do (k,v) =>
         req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
-    @_processRequestCookies()
-    # @_processRequestBody()
+    if @g.DEBUG_HEADERS
+      console.log('Request headers --------->>>')
+      p(req.headers)
 
-  # _processRequestBody: () ->
-  #   @body = ''
-  #   if @req.body
-  #     bodyParts = []
-  #     for k,v of @req.body
-  #       do (k,v) ->
-  #         bodyParts.push(k + '=' + encodeURIComponent(v))
-  #     @body = bodyParts.join('&')
-
-  _processRequestCookies: () ->
+  _processRequestCookies: (cookies) ->
     @jar = request.jar()
-    cookies = @req.headers['cookie']
-    if cookies
-      cookies = cookies.split(';')
-      for cookie in cookies
-        do (cookie) =>
-          @jar.add(request.cookie(cookie))
+    cookies = cookies.split(';')
+    for cookie in cookies
+      do (cookie) =>
+        @jar.add(request.cookie(cookie))
 
-  _processResponseCookies: (cookies) ->
+  _setContentType: (value) ->
+    if value?.match(/html/i)
+      @type = HTML
+    else if @isScript || value?.match(/javascript/i)
+      @type = JS
+
+  pipefilter: (resp, dest) ->
+    if @g.DEBUG_HEADERS
+      console.log('Unmodified Response headers <<<---------')
+      p(resp.headers)
+    for own k,v of resp.headers
+      do (k,v) =>
+        val = @visitResponseHeader(k, v)
+        if val
+          @res.setHeader(k, val)
+        else
+          @res.removeHeader(k)
+    @res.statusCode = resp.statusCode
+    cookies = resp.headers['set-cookie']
     if cookies
       for cookie in cookies
         do (cookie) =>
           c = cookie.split(';')[0]
           parts = c.split('=')
           @res.cookie(parts[0], parts[1])
-
-  _setContentType: (value) ->
-    if @isScript || value?.match(/html/i)
-      @type = HTML
-    else if value?.match(/javascript/i)
-      @type = JS
-
-  pipefilter: (resp, dest) ->
-    for own k,v of resp.headers
-      do (k,v) =>
-        val = @visitResponseHeader(k?.toLowerCase(), v)
-        if val
-          @res.setHeader(k, val)
-        else
-          @res.removeHeader(k)
-    # @res.setHeader('Access-Control-Allow-Origin', @protocol+'://*.myapp.dev')
-    # @res.setHeader('Access-Control-Allow-Credentials', 'true')
-    @res.statusCode = resp.statusCode
-    @_processResponseCookies(resp.headers['set-cookie'])
+    if @g.DEBUG_HEADERS
+      console.log('Response headers <<<---------')
+      p(@res._headers)
     @choosePipe()
 
   visitResponseHeader: (name, value) ->
-    switch name
+    lowered = name.toLowerCase()
+    switch lowered
       when 'content-encoding'
         if value?.match(/(gzip|deflate)/i)
           @compressed = true
       when 'location'
+        return @g.xtnd.proxiedUrl(value)
+      when 'access-control-allow-origin'
         return @g.xtnd.proxiedUrl(value)
       when 'content-type'
         @_setContentType(value)
@@ -98,8 +96,12 @@ class ProxyStream extends stream.Stream
 
   visitRequestHeader: (name, value) ->
     switch name
+      when 'origin'
+        return @g.xtnd.normalUrl(value)
+      when 'referer'
+        return @g.xtnd.normalUrl(value)
       when 'cookie'
-        # do stuff to cookies here
+        @_processRequestCookies(value)
         return value
     return value
 
@@ -108,17 +110,17 @@ class ProxyStream extends stream.Stream
       if @compressed
         # if the stream came in compressed, we'll send it back out
         # compressed
-        @res.header('X-Pipe', 'compressed')
+        @res.setHeader('X-Pipe', 'compressed')
         stream = new ContentStream(@req, @res, @type, @g)
         @pipe(zlib.createGunzip()).pipe(stream)
         stream.pipe(zlib.createGzip()).pipe(@res)
       else
-        @res.header('X-Pipe', 'content')
+        @res.setHeader('X-Pipe', 'content')
         stream = new ContentStream(@req, @res, @type, @g)
         @pipe(stream)
         stream.pipe(@res)
     else
-      @res.header('X-Pipe', 'passthrough')
+      @res.setHeader('X-Pipe', 'passthrough')
       @pipe(@res)
 
   write: (chunk, encoding) ->
