@@ -3,6 +3,7 @@
 #   p = (x) -> eyes.inspect(x)
 
 _tags = exports.LOCATION_TAGS = {
+  embed: 'src'
   a: 'href'
   img: 'src'
   script: 'src'

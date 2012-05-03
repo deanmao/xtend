@@ -22,7 +22,7 @@ start = ->
   node = stream 'coffee', options
 
 task 'run', 'Run server', ->
-  # dns()
+  dns()
   start()
   watch 'lib', (event, file) ->
     start()
