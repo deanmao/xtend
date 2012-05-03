@@ -17,6 +17,7 @@ convertPropertyToLiteral = (binding, node) ->
 class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
+  # DEBUG_HEADERS: true
   PASSTHROUGH: false
   JS_DEBUG: true
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT.js'
