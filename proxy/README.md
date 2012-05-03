@@ -3,14 +3,18 @@ Xtend Overview
 
 ### Basics:
 
-Proxy is minimal and doesn't really work properly on anything yet.
+First, forward your local ports 80 & 443 to 3000 and 3443 respectively
+like this:
+
+    ipfw add 100 fwd 127.0.0.1,3000 tcp from any to me 80
+    ipfw add 101 fwd 127.0.0.1,3443 tcp from any to me 443
 
 Type this to start the proxy server:
 
     cake run
 
-One can access a site via *.myapp.dev:3000 via the following heuristic:
-A url like www.google.com becomes www-google-com.myapp.dev:3000 in our
+One can access a site via *.myapp.dev via the following heuristic:
+A url like www.google.com becomes www-google-com.myapp.dev in our
 system.
 
 ### app.coffee
