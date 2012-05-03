@@ -47,9 +47,10 @@ class Handler
             value2 = @g.xtnd.proxiedUrl(value)
             attributes[key] = value2
           else if @g.tester.isInlineJsAttribute(key)
-            # TODO: (do we really need to replace &amp; all the time?)
-            value2 = '(function(){' + @g.util.decodeChars(value) + '})()'
-            data = @rewriteJS(value2, {indent: '', newline: ''})
+            value = @g.util.removeHtmlComments(el.raw)
+            value = @g.util.decodeChars(value)
+            value = '(function(){' + value + '})()'
+            data = @rewriteJS(value, {indent: '', newline: ''})
             attributes[key] = data
           else
             attributes[key] = value
@@ -71,7 +72,8 @@ class Handler
   writeText: (el) ->
     @visit('inside', el.name)
     if @insideScript
-      decoded = @g.util.decodeInlineChars(el.raw)
+      value = @g.util.removeHtmlComments(el.raw)
+      decoded = @g.util.decodeInlineChars(value)
       @appendRaw(@rewriteJS(decoded))
     else
       @appendRaw(el.raw)

@@ -41,7 +41,8 @@ class Handler
         @visit('inside', @tagName)
         if @insideScript
           if el.data
-            decoded = @g.util.decodeInlineChars(el.data)
+            value = @g.util.removeHtmlComments(el.data)
+            decoded = @g.util.decodeInlineChars(value)
             @appendText(@rewriteJS(decoded))
           else
             @appendText('')
@@ -70,8 +71,9 @@ class Handler
           @appendAttr(attrib, value2)
         else if @g.tester.isInlineJsAttribute(attrib)
           if value
-            value2 = '(function(){' + @g.util.decodeChars(value) + '})()'
-            @appendAttr(attrib, @rewriteJS(value2, {newline: '', indent: ''}))
+            value = @g.util.removeHtmlComments(value)
+            value = '(function(){' + @g.util.decodeChars(value) + '})()'
+            @appendAttr(attrib, @rewriteJS(value, {newline: '', indent: ''}))
           else
             @appendAttr(attrib, '')
         else

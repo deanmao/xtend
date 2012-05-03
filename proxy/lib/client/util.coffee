@@ -20,9 +20,9 @@ util = module.exports = {
         else s
 
   decodeInlineChars: (str) ->
-    hack = str.indexOf('<!--')
-    if hack > -1 && hack < 20
-      str = str.replace('<!--', '').replace('-->', '')
     str.replace /&#0?0?(\d+);/g, (s, code) ->
       String.fromCharCode(parseInt(code))
+
+  removeHtmlComments: (str) ->
+    str.replace(/<!\-\-/g, '').replace(/\-\->/g, '')
 }

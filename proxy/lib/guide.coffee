@@ -32,7 +32,6 @@ class Guide
     r = @jsRewriter = new @js.Rewriter(@esprima, @codegen, @)
     @xtnd.setGuide(@)
     # ------------- create js rewrite rules
-
     # assignment, but skip function assignments like: a[x] = function(){}
     r.find('@obj.@prop = @rhs', skipRhsFunctionExpressions)
       .replaceWith("xtnd.assign(@obj, @prop, @rhs)", convertPropertyToLiteral)
@@ -118,6 +117,9 @@ class Guide
     else if name == 'head' && location == 'after' && !context.insertedSpecialJS
       context.insertedSpecialJS = true
       '<script src="/x_t_n_d/scripts"></script>'
+
+  log: () ->
+    @p(arguments...)
 
   p: () ->
     # default to disable debug print
