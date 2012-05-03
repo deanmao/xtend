@@ -98,8 +98,11 @@ class Handler
         @appendCloseStartTag()
         @visit('inside', @tagName)
         if @insideScript
-          decoded = decodeInlineChars(el.data)
-          @appendText(@rewriteJS(decoded))
+          if el.data
+            decoded = decodeInlineChars(el.data)
+            @appendText(@rewriteJS(decoded))
+          else
+            @appendText('')
         else
           @appendText(el.data)
       when 'tag'
@@ -124,8 +127,11 @@ class Handler
             value2 = value2 + @guide.FORCE_SCRIPT_SUFFIX
           @appendAttr(attrib, value2)
         else if _jsAttributes[attrib.toLowerCase()]
-          value2 = '(function(){' + decodeChars(value) + '})()'
-          @appendAttr(attrib, @rewriteJS(value2, {newline: '', indent: ''}))
+          if value
+            value2 = '(function(){' + decodeChars(value) + '})()'
+            @appendAttr(attrib, @rewriteJS(value2, {newline: '', indent: ''}))
+          else
+            @appendAttr(attrib, '')
         else
           @appendAttr(attrib, value)
       when 'cdata'

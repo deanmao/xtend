@@ -7,7 +7,7 @@ js = require('./js')
 html = require('./html')
 
 guide = new gd.Guide(
-  host: 'myapp.dev:3000'
+  host: 'myapp.dev'
   esprima: esprima
   codegen: codegen
   htmlparser: htmlparser
