@@ -41,9 +41,16 @@ class Handler
         @visit('inside', @tagName)
         if @insideScript
           if el.data
-            value = @g.util.removeHtmlComments(el.data)
-            decoded = @g.util.decodeInlineChars(value)
-            @appendText(@rewriteJS(decoded))
+            try
+              value = @g.util.removeHtmlComments(el.data)
+              value = @g.util.decodeInlineChars(value)
+              value = @rewriteJS(value)
+              # value = @g.util.simpleEncode(value)
+              @appendText(value)
+            catch e
+              # sometimes script tags contain non-js such as
+              # backbone view templates
+              @appendText(el.data)
           else
             @appendText('')
         else
@@ -73,7 +80,9 @@ class Handler
           if value
             value = @g.util.removeHtmlComments(value)
             value = '(function(){' + @g.util.decodeChars(value) + '})()'
-            @appendAttr(attrib, @rewriteJS(value, {newline: '', indent: ''}))
+            value = @rewriteJS(value, {newline: '', indent: ''})
+            # value = @g.util.simpleEncode(value)
+            @appendAttr(attrib, value)
           else
             @appendAttr(attrib, '')
         else

@@ -50,8 +50,9 @@ class Handler
             value = @g.util.removeHtmlComments(el.raw)
             value = @g.util.decodeChars(value)
             value = '(function(){' + value + '})()'
-            data = @rewriteJS(value, {indent: '', newline: ''})
-            attributes[key] = data
+            value = @rewriteJS(value, {indent: '', newline: ''})
+            # value = @g.util.simpleEncode(value)
+            attributes[key] = value
           else
             attributes[key] = value
       @appendTag(el, attributes)
@@ -73,8 +74,9 @@ class Handler
     @visit('inside', el.name)
     if @insideScript
       value = @g.util.removeHtmlComments(el.raw)
-      decoded = @g.util.decodeInlineChars(value)
-      @appendRaw(@rewriteJS(decoded))
+      value = @g.util.decodeInlineChars(value)
+      # value = @g.util.simpleEncode(value)
+      @appendRaw(@rewriteJS(value))
     else
       @appendRaw(el.raw)
 

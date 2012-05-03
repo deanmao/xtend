@@ -10,6 +10,9 @@ util = module.exports = {
         aRet[i] = str[i]
     return aRet.join('')
 
+  simpleEncode: (str) ->
+    str.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
   decodeChars: (str) ->
     util.decodeInlineChars(str).replace /&(\w+);/g, (s, code) ->
       switch code

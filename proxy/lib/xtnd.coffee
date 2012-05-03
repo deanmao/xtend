@@ -41,6 +41,8 @@ toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
 proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
+    unless orig
+      return orig
     if _guide?.host && orig.indexOf(_guide.host) >= 0
       return orig # the url is already a proxy url
     [protocol, host, path] = threeParts(orig)
@@ -57,6 +59,8 @@ proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
 normalUrl = xtnd.normalUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
+    unless orig
+      return orig
     if _guide?.host && orig.indexOf(_guide.host) == -1
       return orig # the url is not a proxy url
     [protocol, host, path] = threeParts(orig)
@@ -120,6 +124,11 @@ xtnd.eval = (code) ->
   else
     xtnd.proxiedJS(code)
 
+if typeof(window) != 'undefined'
+  _open = XMLHttpRequest.prototype.open
+  window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
+    _open.apply(this, [method, proxiedUrl(url), async, user, pass])
+
 xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj
   if _guide.PASSTHROUGH
@@ -152,6 +161,8 @@ xtnd.methodCall = (obj, name, caller, args) ->
         obj[name].apply(caller, args)
     else
       obj[name].apply(caller, args)
+  else if obj.location && isOneOf('postmessage', name)
+    obj.postMessage(args[0], proxiedUrl(args[1]))
   else
     obj[name].apply(caller, args)
 

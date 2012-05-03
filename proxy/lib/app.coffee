@@ -58,14 +58,14 @@ configureServer = (app, protocol) ->
       isScript = true
     url = xtnd.normalUrl(protocol, req.headers.host, originalUrl)
     req.headers.host = xtnd.toNormalHost(req.headers.host)
-    stream = new ProxyStream(req, res, _guide)
+    stream = new ProxyStream(req, res, _guide, isScript, protocol, req.headers.host)
     request(
       url: url
       method: req.method
       followRedirect: false
-      body: req.param.body
       headers: req.headers
-      jar: false # TODO
+      body: stream.body
+      jar: stream.jar
       pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
     ).pipe(stream)
 

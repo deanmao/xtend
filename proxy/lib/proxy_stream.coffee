@@ -1,4 +1,5 @@
 stream = require('stream')
+request = require('request')
 inspect = require('eyes').inspector(maxLength: 20000)
 zlib = require 'zlib'
 p = () -> inspect(arguments...)
@@ -16,17 +17,52 @@ HTML = 3
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
   writable: true
-  constructor: (req, res, guide, isScript) ->
+  constructor: (req, res, guide, isScript, protocol, host) ->
     @type = BINARY
+    @protocol = protocol
+    @host = host
     @isScript = isScript
     if @isScript
       @type = JS
     @g = guide
+    @proxiedHost = @g.xtnd.toProxiedHost(@host)
     @res = res
     @req = req
     for own k,v of req.headers
       do (k,v) =>
         req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
+    @_processRequestCookies()
+    @_processRequestBody()
+
+  _processRequestBody: () ->
+    @body = ''
+    if @req.body
+      bodyParts = []
+      for k,v of @req.body
+        do (k,v) ->
+          bodyParts.push(k + '=' + encodeURIComponent(v))
+      @body = bodyParts.join('&')
+
+  _processRequestCookies: () ->
+    @jar = request.jar()
+    cookies = @req.headers['cookie']
+    if cookies
+      cookies = cookies.split(';')
+      for cookie in cookies
+        do (cookie) =>
+          p 'request'
+          p cookie
+          @jar.add(request.cookie(cookie))
+
+  _processResponseCookies: (cookies) ->
+    if cookies
+      for cookie in cookies
+        do (cookie) =>
+          c = cookie.split(';')[0]
+          parts = c.split('=')
+          p 'response'
+          p parts
+          @res.cookie(parts[0], parts[1])
 
   _setContentType: (value) ->
     if @isScript || value?.match(/html/i)
@@ -42,7 +78,10 @@ class ProxyStream extends stream.Stream
           @res.setHeader(k, val)
         else
           @res.removeHeader(k)
+    # @res.setHeader('Access-Control-Allow-Origin', @protocol+'://*.myapp.dev')
+    # @res.setHeader('Access-Control-Allow-Credentials', 'true')
     @res.statusCode = resp.statusCode
+    @_processResponseCookies(resp.headers['set-cookie'])
     @choosePipe()
 
   visitResponseHeader: (name, value) ->
