@@ -133,7 +133,6 @@ xtnd.methodCall = (obj, name, caller, args) ->
   if isXMLHttpRequest(obj)
     if name == 'open'
       [method, url, async, user, pass] = args
-      obj.setRequestHeader('X-Xtnd-XHR', url)
       obj.open(method, proxiedUrl(url), async, user, pass)
     else
       obj[name].apply(caller, args)
