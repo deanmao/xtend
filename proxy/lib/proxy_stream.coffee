@@ -160,8 +160,13 @@ class ContentStream extends stream.Stream
       # else, we will try to parse it with json and if it fails
       # go back to JS again
       if data.match(/(function|var)/)
-        output = @g.convertJs(data)
-        @emit 'data', output
+        try
+          output = @g.convertJs(data)
+          @emit 'data', output
+        catch e
+          console.log('bad json:')
+          console.log(data)
+          @emit 'data', data
       else
         try
           JSON.parse(data)

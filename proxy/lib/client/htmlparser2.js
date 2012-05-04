@@ -349,7 +349,6 @@ function Parser (builder, options) {
         }
         state.pos += name_data.match.length;
         var value_data = this._parseAttr_findValue(state);
-        var end = state.data.indexOf(' ', state.pos);
         if (value_data) {
             if (!state.done && state.pos + value_data.match.length === state.data.length) {
                 state.needData = true;
@@ -358,7 +357,8 @@ function Parser (builder, options) {
             }
             state.pos += value_data.match.length;
         } else {
-            if (state.data.indexOf(' ', state.pos-1)) {
+          // CRAP...  this stuff is majorly broken
+            if (state.data[state.pos-2] === ' ') { // TODO : state.data[state.pos-2] === ' ') {
                 value_data = {
                       match: ''
                     , value: name_data.name
@@ -366,9 +366,14 @@ function Parser (builder, options) {
 
             } else {
                 Parser.re_parseAttr_splitValue.lastIndex = state.pos;
-                if (Parser.re_parseAttr_splitValue.exec(state.data)) {
+                var charBeforeName = state.data[state.pos - name_data.match.length - 1]
+                if (charBeforeName === ' ' && !state.data[state.pos]) {
                     state.needData = true;
-                    state.pos -= name_data.match.length;
+                    state.pos -= (name_data.match.length + 1);
+                    return;
+                } else if (Parser.re_parseAttr_splitValue.exec(state.data)) {
+                    state.needData = true;
+                    state.pos -= (name_data.match.length + 2);
                     return;
                 }
                 value_data = {

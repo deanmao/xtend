@@ -159,14 +159,15 @@ if typeof(window) != 'undefined'
 
 traverseNode = (node, parent) ->
   children = node.children
-  for child in children
-    do (child) ->
-      name = child.nodeName
-      attr = _guide.tester.getHotTagAttribute(name)
-      if attr && _guide.tester.isHotTagAttribute(name, attr)
-        value = child.getAttribute(attr)
-        child.setAttribute(attr, proxiedUrl(value))
-      traverseNode(child, node)
+  if children
+    for child in children
+      do (child) ->
+        name = child.nodeName
+        attr = _guide.tester.getHotTagAttribute(name)
+        if attr && _guide.tester.isHotTagAttribute(name, attr)
+          value = child.getAttribute(attr)
+          child.setAttribute(attr, proxiedUrl(value))
+        traverseNode(child, node)
 
 xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj

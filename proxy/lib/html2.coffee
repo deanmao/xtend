@@ -20,9 +20,9 @@ class Handler
       @g.esprima.multilineStrings = true
       output = @g.convertJs(code, options)
     catch e
+      @g.p?('bad js from html2')
+      @g.p?(code)
       @g.p?(@url)
-      unless @g.isBrowser()
-        throw e
     finally
       @g.esprima.multilineStrings = false
     return output

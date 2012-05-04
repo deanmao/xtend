@@ -4,6 +4,7 @@ fs            = require 'fs'
 watch         = require 'directory-tree-watcher'
 
 node = null
+dnsNode = null
 
 stream = (command, options, callback) ->
   sub = spawn command, options
@@ -13,8 +14,9 @@ stream = (command, options, callback) ->
   sub
 
 dns = ->
+  dnsNode?.kill()
   options = ['lib/dns_server.coffee']
-  node = stream 'coffee', options
+  dnsNode = stream 'coffee', options
 
 start = ->
   node?.kill()
