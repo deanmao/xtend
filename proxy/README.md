@@ -44,7 +44,6 @@ This is mainly a utility script for testing strings of values against a
 set of predefined property sets.  Basically we use this to determine if
 a method/attribute requires processing.
 
-
 ### util.coffee
 
 Contains a bunch of shared code that doesn't belong anywhere else.
