@@ -17,9 +17,10 @@ HTML = 3
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
   writable: true
-  constructor: (req, res, guide, isScript, protocol) ->
+  constructor: (req, res, guide, isScript, protocol, skip) ->
     @g = guide
     @type = BINARY
+    @skip = skip
     @protocol = protocol
     @host = req.headers.host
     @isScript = isScript
@@ -36,10 +37,11 @@ class ProxyStream extends stream.Stream
       p(req.headers)
 
   _setContentType: (value) ->
-    if value?.match(/html/i)
-      @type = HTML
-    else if @isScript || value?.match(/javascript/i)
-      @type = JS
+    unless @skip
+      if value?.match(/html/i)
+        @type = HTML
+      else if @isScript || value?.match(/javascript/i)
+        @type = JS
 
   pipefilter: (resp, dest) ->
     if @g.DEBUG_RES_HEADERS
@@ -58,7 +60,7 @@ class ProxyStream extends stream.Stream
     if cookies
       for cookie in cookies
         do (cookie) =>
-          newcookies.push(cookie.replace /domain=([\w\.]+);?/i, (x, host) =>
+          newCookies.push(cookie.replace /domain=([\w\.]+);?/i, (x, host) =>
             host = @g.xtnd.toProxiedHost(host)
             if host[0] == '-'
               host = host.replace(/^\-/, '.')

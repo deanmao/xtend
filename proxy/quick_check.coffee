@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-a.b = c.d = e.f = g.h;
+q.write('<script src="' + l + '" onload="o()" onreadystatechange="/complete/.test(this.readyState)&&o()"></script>');
   """
 
 class Handler
@@ -65,8 +65,13 @@ else
     js = require('./lib/js')
     esprima = require('./lib/client/esprima')
     codegen = require './lib/client/escodegen'
+    tester = require './lib/client/property_tester'
     r = new js.Rewriter(esprima, codegen)
-    r.find('@obj.@method(@args+)')
+    checkHotMethod = (name, node) =>
+      if name == 'method' && node.type == 'Identifier' && !tester.isHotMethod(node.name)
+        return false
+      return true
+    r.find('@obj.@method(@args+)', checkHotMethod)
       .replaceWith "xtnd.methodCall(@obj, @method, this, [@args+])", (binding, node) ->
         if node.name == 'method' && binding.type == 'Identifier'
           {type: 'Literal', value: binding.name}

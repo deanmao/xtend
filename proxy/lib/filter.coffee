@@ -10,6 +10,8 @@ ProxyStream = require('./proxy_stream')
 # server, after being slightly modified.
 module.exports = (options) ->
   guide = options.guide
+  forceScriptSuffixRegExp = new RegExp(guide.FORCE_SCRIPT_SUFFIX, 'g')
+  xhrSuffixRegExp = new RegExp(guide.XHR_SUFFIX, 'g')
   protocol = options.protocol
   xtnd = guide.xtnd
   returnVal = (req, res, next) ->
@@ -18,12 +20,16 @@ module.exports = (options) ->
       next()
     else
       isScript = false
+      skip = false
       if originalUrl.indexOf(guide.FORCE_SCRIPT_SUFFIX) != -1
-        originalUrl = originalUrl.replace(guide.FORCE_SCRIPT_SUFFIX, '')
+        originalUrl = originalUrl.replace(forceScriptSuffixRegExp, '')
         isScript = true
+      if originalUrl.indexOf(guide.XHR_SUFFIX) != -1
+        originalUrl = originalUrl.replace(xhrSuffixRegExp, '')
+        skip = true
       url = xtnd.normalUrl(protocol, req.headers.host, originalUrl)
       req.headers.host = xtnd.toNormalHost(req.headers.host)
-      stream = new ProxyStream(req, res, guide, isScript, protocol)
+      stream = new ProxyStream(req, res, guide, isScript, protocol, skip)
       remoteReq = request(
         url: url
         method: req.method

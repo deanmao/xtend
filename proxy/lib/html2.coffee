@@ -20,8 +20,9 @@ class Handler
       @g.esprima.multilineStrings = true
       output = @g.convertJs(code, options)
     catch e
-      @g.p(@url)
-      throw e
+      @g.p?(@url)
+      unless @g.isBrowser()
+        throw e
     finally
       @g.esprima.multilineStrings = false
     return output
@@ -46,7 +47,10 @@ class Handler
               value = @g.util.decodeInlineChars(value)
               value = @rewriteJS(value)
               # value = @g.util.simpleEncode(value)
-              @appendText(value)
+              # TODO HACK:
+              value = value.replace(/<\//g, '<\\/')
+              # value = @g.makeSafe(value)
+              @appendText('\n\n'+value+'\n\n')
             catch e
               # sometimes script tags contain non-js such as
               # backbone view templates
@@ -55,6 +59,9 @@ class Handler
             @appendText('')
         else
           @appendText(el.data)
+      when 'comment'
+        @appendCloseStartTag()
+        @appendRaw('\n<!--\n'+el.data+'\n-->\n')
       when 'tag'
         if el.name[0] == '/'
           @insideScript = false

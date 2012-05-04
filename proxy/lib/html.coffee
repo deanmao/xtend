@@ -15,8 +15,9 @@ class Handler
       @g.esprima.multilineStrings = true
       output = @g.convertJs(code, options)
     catch e
-      @g.p(@url)
-      throw e
+      @g.p?(@url)
+      unless @g.isBrowser()
+        throw e
     finally
       @g.esprima.multilineStrings = false
     return output
@@ -76,7 +77,10 @@ class Handler
       value = @g.util.removeHtmlComments(el.raw)
       value = @g.util.decodeInlineChars(value)
       # value = @g.util.simpleEncode(value)
-      @appendRaw(@rewriteJS(value))
+      value = @rewriteJS(value)
+      # TODO HACK:
+      value = value.replace(/<\//g, '<\\/')
+      @appendRaw('\n\n' + value + '\n\n')
     else
       @appendRaw(el.raw)
 

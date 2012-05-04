@@ -18,10 +18,11 @@ class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
   # DEBUG_REQ_HEADERS: true
-  DEBUG_RES_HEADERS: true
+  # DEBUG_RES_HEADERS: true
   PASSTHROUGH: false
   JS_DEBUG: true
-  FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT.js'
+  FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
+  XHR_SUFFIX: '__XTND_XHR'
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -54,7 +55,7 @@ class Guide
       .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
 
     checkHotMethod = (name, node) =>
-      if name == 'method' && node.type == 'Identifier' && !@tester.isHotMethod(node.value)
+      if name == 'method' && node.type == 'Identifier' && !@tester.isHotMethod(node.name)
         return false
       return true
 
@@ -66,9 +67,8 @@ class Guide
     r.find('eval(@x)')
       .replaceWith('eval(xtnd.eval(@x))')
 
-    # worry about IE later
-    # r.find('new ActiveXObject(@x)')
-    #   .replaceWith('new xtnd.ActiveXObject(@x)')
+    r.find('new ActiveXObject(@x+)')
+      .replaceWith('new xtnd.ActiveXObject(@x+)')
 
   convertJs: (code, options) ->
     if @REWRITE_JS
@@ -93,6 +93,9 @@ class Guide
     else
       code
 
+  makeSafe: (code) ->
+    "(function(){try{" + code + "}catch(e){xtnd.log('xtnd inline js error', e)}})()"
+
   convertHtml: (code) ->
     if @REWRITE_HTML
       @htmlHandler.reset()
@@ -100,6 +103,9 @@ class Guide
       @htmlHandler.output
     else
       code
+
+  isBrowser: ->
+    typeof(window) != 'undefined'
 
   # This one is primarly for doing chunked content, to be used later
   # when we want to handle the html streams in chunks instead of one big

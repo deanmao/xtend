@@ -77,11 +77,14 @@ normalUrl = xtnd.normalUrl = (protocol, host, path) ->
 xtnd.proxiedJS = (code) -> _guide.convertJs(code)
 xtnd.proxiedHtml = (code) -> _guide.convertHtml(code)
 
-isLocation = (x) -> x && x.constructor == window.location.constructor
-isDocument = (x) -> x && x.constructor == window.document.constructor
-isWindow = (x) -> x && x.constructor == window.constructor
-isHtmlElement = (x) -> x?.nodeName && x?.nodeType
-isXMLHttpRequest = (x) -> x && x.constructor == XMLHttpRequest
+isWindow = (x) -> x?.setTimeout && x.setInterval && x.history
+isDocument = (x) -> x?.constructor == window.document.constructor
+isLocation = (x) -> x?.constructor == window.location.constructor
+isHtmlElement = (x) -> x?.nodeName && x.nodeType
+isXMLHttpRequest = (x) -> x?.constructor == XMLHttpRequest
+
+xtnd.log = () ->
+  console.log(arguments...)
 
 xtnd.assign = (obj, property, value, operation) ->
   try
@@ -106,7 +109,10 @@ xtnd.assign = (obj, property, value, operation) ->
       if isOneOf('src href action', property)
         obj[property] = proxiedUrl(value)
       else if isOneOf('innerhtml', property)
-        obj[property] = xtnd.proxiedHtml(value)
+        x = document.createElement('div')
+        x.innerHTML = value
+        value = xtnd.proxiedHtml(x.innerHTML)
+        obj[property] = value
       else
         obj[property] = value
     else if isWindow(obj) && isOneOf('location, url, href', property)
@@ -127,7 +133,11 @@ xtnd.eval = (code) ->
 if typeof(window) != 'undefined'
   _open = XMLHttpRequest.prototype.open
   window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
-    _open.apply(this, [method, proxiedUrl(url), async, user, pass])
+    url = proxiedUrl(url) + _guide.XHR_SUFFIX
+    _open.apply(this, [method, url, async, user, pass])
+  _replace = document.location.replace
+  document.location.replace = (url) ->
+    _replace.apply(document.location, [proxiedUrl(url)])
 
 xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj
@@ -165,4 +175,8 @@ xtnd.methodCall = (obj, name, caller, args) ->
     obj.postMessage(args[0], proxiedUrl(args[1]))
   else
     obj[name].apply(caller, args)
+
+xtnd.ActiveXObject = () ->
+xtnd.ActiveXObject.prototype = (server, typeName, location) ->
+  new ActiveXObject(proxiedUrl(server), typeName, location)
 

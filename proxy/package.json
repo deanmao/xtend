@@ -10,6 +10,7 @@
     , "optimist": ""
     , "coffee-script": ""
     , "modul8": ""
+    , "mongoose": ""
     , "long-stack-traces": ""
     , "directory-tree-watcher": ""
   }

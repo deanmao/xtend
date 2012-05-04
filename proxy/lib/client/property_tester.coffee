@@ -44,7 +44,7 @@ listToHash = (str) ->
 generateTester = (list) ->
   hash = listToHash(list)
   checker = (prop) ->
-    prop && hash[prop.toLowerCase]
+    prop && hash[prop.toLowerCase()]
 
 testers = module.exports =
   isInlineJsAttribute: generateTester(_js_attributes)
