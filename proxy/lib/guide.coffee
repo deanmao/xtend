@@ -18,7 +18,7 @@ class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
   # DEBUG_REQ_HEADERS: true
-  # DEBUG_RES_HEADERS: true
+  DEBUG_RES_HEADERS: true
   PASSTHROUGH: false
   JS_DEBUG: true
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT.js'

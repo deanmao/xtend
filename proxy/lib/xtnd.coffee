@@ -32,11 +32,11 @@ xtnd.setGuide = (guide) ->
   _guide = guide
 
 toProxiedHost = xtnd.toProxiedHost = (host) ->
-  host.replace(/\-/g, '--').replace(/\./g, '-') + '.' + _guide.host
+  host.replace(/\-/g, '--').replace(/\./g, '-').replace(/:/g, '--p--') + '.' + _guide.host
 
 toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
   subdomain = proxiedHost.split('.')[0]
-  subdomain.replace(/\-/g, '.').replace(/\.\./g, '-')
+  subdomain.replace(/\-\-p\-\-/g, ':').replace(/\-/g, '.').replace(/\.\./g, '-')
 
 proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length

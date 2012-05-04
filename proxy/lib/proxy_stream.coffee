@@ -35,13 +35,6 @@ class ProxyStream extends stream.Stream
       console.log('Request headers --------->>>')
       p(req.headers)
 
-  _processRequestCookies: (cookies) ->
-    @jar = request.jar()
-    cookies = cookies.split(';')
-    for cookie in cookies
-      do (cookie) =>
-        @jar.add(request.cookie(cookie))
-
   _setContentType: (value) ->
     if value?.match(/html/i)
       @type = HTML
@@ -65,10 +58,14 @@ class ProxyStream extends stream.Stream
     if cookies
       for cookie in cookies
         do (cookie) =>
-          newCookies.push(cookie.replace /domain=(.+)/, (x, host) =>
-            'domain=' + @g.xtnd.toProxiedHost(host)
+          newcookies.push(cookie.replace /domain=([\w\.]+);?/i, (x, host) =>
+            host = @g.xtnd.toProxiedHost(host)
+            if host[0] == '-'
+              host = host.replace(/^\-/, '.')
+            'domain=' + host + ';'
           )
       @res.removeHeader('set-cookie')
+      # TODO: save cookies here
       @res.setHeader('set-cookie', newCookies)
     if @g.DEBUG_RES_HEADERS
       console.log('Response headers <<<---------')
@@ -100,8 +97,8 @@ class ProxyStream extends stream.Stream
         return @g.xtnd.normalUrl(value)
       when 'referer'
         return @g.xtnd.normalUrl(value)
-      when 'cookie'
-        @_processRequestCookies(value)
+      when 'cookies'
+        # set cookies here
         return value
     return value
 

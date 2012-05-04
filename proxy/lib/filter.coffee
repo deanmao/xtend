@@ -31,8 +31,11 @@ module.exports = (options) ->
         headers: req.headers
         jar: false
         pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
-      ).pipe(stream)
+      )
+      remoteReq.pause()
+      remoteReq.pipe(stream)
       req.on 'data', (chunk) ->
-        remoteReq.emit 'data', chunk
+        remoteReq.write(chunk)
       req.on 'end', ->
-        remoteReq.emit 'end'
+        remoteReq.end()
+      remoteReq.resume()
