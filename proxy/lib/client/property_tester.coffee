@@ -29,7 +29,7 @@ _hot_properties = """
 location url href cookie domain src innerhtml host hostname history documenturi
 baseuri port referrer parent top opener window parentwindow action
 """
-_hot_methods = 'setattribute write writeln getattribute open setrequestheader'
+_hot_methods = 'setattribute write writeln getattribute open setrequestheader appendchild'
 _window_attributes = 'location, url, href'
 _dom_location_attributes = 'src href action'
 _hot_references = 'location top parent'
@@ -52,7 +52,9 @@ testers = module.exports =
   isHotReference: generateTester(_hot_references)
   isHotProperty: generateTester(_hot_properties)
   isHotTagAttribute: (tagName, attribName) ->
-    _tag_attribute_pairs[tagName] == attribName
+    _tag_attribute_pairs[tagName.toLowerCase()] == attribName
+  getHotTagAttribute: (tagName) ->
+    _tag_attribute_pairs[tagName.toLowerCase()]
   isDomLocationAttribute: generateTester(_dom_location_attributes)
   isWindowAttribute: generateTester(_window_attributes)
 

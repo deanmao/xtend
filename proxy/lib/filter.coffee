@@ -28,7 +28,11 @@ module.exports = (options) ->
         originalUrl = originalUrl.replace(xhrSuffixRegExp, '')
         skip = true
       url = xtnd.normalUrl(protocol, req.headers.host, originalUrl)
-      req.headers.host = xtnd.toNormalHost(req.headers.host)
+      host = xtnd.toNormalHost(req.headers.host)
+      if guide.isProxyUrl(host)
+        res.send('')
+        return
+      req.headers.host = host
       stream = new ProxyStream(req, res, guide, isScript, protocol, skip)
       remoteReq = request(
         url: url

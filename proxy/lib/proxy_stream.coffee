@@ -88,6 +88,8 @@ class ProxyStream extends stream.Stream
         @_setContentType(value)
         if @type == JS || @type == HTML
           @res.removeHeader('content-length')
+      when 'x-frame-options'
+        return null
       when 'content-length'
         if @type == JS || @type == HTML
           return null

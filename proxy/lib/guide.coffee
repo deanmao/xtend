@@ -96,6 +96,9 @@ class Guide
   makeSafe: (code) ->
     "(function(){try{" + code + "}catch(e){xtnd.log('xtnd inline js error', e)}})()"
 
+  isProxyUrl: (url) ->
+    url.indexOf(@host) != -1
+
   convertHtml: (code) ->
     if @REWRITE_HTML
       @htmlHandler.reset()

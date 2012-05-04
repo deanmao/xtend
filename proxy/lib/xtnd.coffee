@@ -38,12 +38,13 @@ toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
   subdomain = proxiedHost.split('.')[0]
   subdomain.replace(/\-\-p\-\-/g, ':').replace(/\-/g, '.').replace(/\.\./g, '-')
 
+
 proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length
     orig = protocol
     unless orig
       return orig
-    if _guide?.host && orig.indexOf(_guide.host) >= 0
+    if _guide.isProxyUrl(orig)
       return orig # the url is already a proxy url
     [protocol, host, path] = threeParts(orig)
     unless protocol
@@ -61,8 +62,8 @@ normalUrl = xtnd.normalUrl = (protocol, host, path) ->
     orig = protocol
     unless orig
       return orig
-    if _guide?.host && orig.indexOf(_guide.host) == -1
-      return orig # the url is not a proxy url
+    unless _guide.isProxyUrl(orig)
+      return orig
     [protocol, host, path] = threeParts(orig)
     unless protocol
       [host, path] = twoParts(orig)
@@ -85,6 +86,22 @@ isXMLHttpRequest = (x) -> x?.constructor == XMLHttpRequest
 
 xtnd.log = () ->
   console.log(arguments...)
+
+checkClickListener = () ->
+  unless xtnd.addedClickListener
+    xtnd.addedClickListener = true
+    document.addEventListener 'click', (event) ->
+      e = event || window.event
+      el = e.target || e.srcElement
+      if el.nodeType == 3
+        el = target.parentNode
+      while el
+        if el.tagName == 'A' || el.nodeName == 'A'
+          el.href = proxiedUrl(el.href)
+          if el.target
+            el.target = ''
+          return el.href
+        el = el.parentNode
 
 xtnd.assign = (obj, property, value, operation) ->
   try
@@ -139,25 +156,39 @@ if typeof(window) != 'undefined'
   document.location.replace = (url) ->
     _replace.apply(document.location, [proxiedUrl(url)])
 
+
+traverseNode = (node, parent) ->
+  children = node.children
+  for child in children
+    do (child) ->
+      name = child.nodeName
+      attr = _guide.tester.getHotTagAttribute(name)
+      if attr && _guide.tester.isHotTagAttribute(name, attr)
+        value = child.getAttribute(attr)
+        child.setAttribute(attr, proxiedUrl(value))
+      traverseNode(child, node)
+
 xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
   if isLocation(obj) && isOneOf('replace', name)
     obj[name].apply(caller, [proxiedUrl(args[0])])
-  else if isDocument(obj) && isOneOf('write writeln', name)
+  else if isDocument(obj) && isOneOf('write writeln appendchild', name)
     xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
     if name == 'writeln'
       document.writeln(xtnd.documentWriteHtmlParser(args[0]))
-    else
+    else if name == 'write'
       document.write(xtnd.documentWriteHtmlParser(args[0]))
+    else if name == 'appendchild'
+      document.appendChild(args[0])
   if isXMLHttpRequest(obj)
     if name == 'open'
       [method, url, async, user, pass] = args
       obj.open(method, proxiedUrl(url), async, user, pass)
     else
       obj[name].apply(caller, args)
-  else if isHtmlElement(obj) && isOneOf('setattribute getattribute', name)
+  else if isHtmlElement(obj) && isOneOf('setattribute getattribute appendchild', name)
     attrib = args[0]
     if name == 'setAttribute'
       if isOneOf('src href action', attrib)
@@ -169,6 +200,9 @@ xtnd.methodCall = (obj, name, caller, args) ->
         obj.getAttribute(attrib, normalUrl(args[1]))
       else
         obj[name].apply(caller, args)
+    else if name == 'appendChild'
+      traverseNode(args[0])
+      obj[name].apply(caller, args)
     else
       obj[name].apply(caller, args)
   else if obj.location && isOneOf('postmessage', name)
