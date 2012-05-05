@@ -1,6 +1,20 @@
 _tag_attribute_pairs = {
   embed: 'src'
   a: 'href'
+  audio: 'src'
+  bgsound: 'src'
+  blockquote: 'cite'
+  command: 'icon'
+  del: 'cite'
+  head: 'profile'
+  ins: 'cite'
+  image: 'src'
+  q: 'cite'
+  source: 'src'
+  video: 'src'
+  track: 'src'
+  area: 'href'
+  body: 'background'
   img: 'src'
   script: 'src'
   link: 'href'
@@ -8,8 +22,13 @@ _tag_attribute_pairs = {
   input: 'src'
   iframe: 'src'
   frame: 'src'
-  area: 'href'
   base: 'href'
+}
+_object_pairs = {
+  object: ["classid", "codebase", "data", "type", "flashvars"]
+  applet: ["code", "codebase", "object", "src"]
+  param: ["value"]
+  embed: ["src", "type", "flashvars"]
 }
 _js_attributes = """
 onblur onchange onclick ondblclick onfocus onkeydown onkeypress onkeyup onload

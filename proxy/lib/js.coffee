@@ -88,6 +88,10 @@ class Rule
   constructor: (patternStr, checker, esprima) ->
     @esprima = esprima
     @detect = @_process(patternStr)
+    # if @detect.type == 'ExpressionStatement'
+      # @detect = @detect.expression
+      # console.log 'ooooooooooooooooooooooooooooooooooooooooooo'
+      # console.log @detect
     @checker = checker
 
   _process: (js) ->

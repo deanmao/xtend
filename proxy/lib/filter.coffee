@@ -1,5 +1,6 @@
 request = require('request')
 ProxyStream = require('./proxy_stream')
+BufferStream = require('bufferstream')
 
 # This is a connect module that performs the remote request if the url
 # is not an "internal" url.
@@ -19,6 +20,9 @@ module.exports = (options) ->
     if req.url.match(/^\/x_t_n_d/)
       next()
     else
+      buffer = new BufferStream()
+      req.pipe(buffer)
+      buffer.pause()
       isScript = false
       skip = false
       if originalUrl.indexOf(guide.FORCE_SCRIPT_SUFFIX) != -1
@@ -34,18 +38,21 @@ module.exports = (options) ->
         return
       req.headers.host = host
       stream = new ProxyStream(req, res, guide, isScript, protocol, skip)
-      remoteReq = request(
-        url: url
-        method: req.method
-        followRedirect: false
-        headers: req.headers
-        jar: false
-        pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
-      )
-      remoteReq.pause()
-      remoteReq.pipe(stream)
-      req.on 'data', (chunk) ->
-        remoteReq.write(chunk)
-      req.on 'end', ->
-        remoteReq.end()
-      remoteReq.resume()
+      stream.setFinishingCallback (requestHeaders) =>
+        remoteReq = request(
+          url: url
+          method: req.method
+          followRedirect: false
+          headers: requestHeaders
+          jar: false
+          pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
+        )
+        remoteReq.pause()
+        remoteReq.pipe(stream)
+        buffer.on 'data', (chunk) ->
+          remoteReq.write(chunk)
+        buffer.on 'end', ->
+          remoteReq.end()
+        remoteReq.resume()
+        buffer.resume()
+      stream.finish()

@@ -1,9 +1,11 @@
 stream = require('stream')
 request = require('request')
+models = require('./models')
+User = models.User
+Cookie = models.Cookie
 inspect = require('eyes').inspector(maxLength: 20000)
 zlib = require 'zlib'
 p = () -> inspect(arguments...)
-
 BINARY = 1
 JS = 2
 HTML = 3
@@ -29,9 +31,10 @@ class ProxyStream extends stream.Stream
     @proxiedHost = @g.xtnd.toProxiedHost(@host)
     @res = res
     @req = req
+    @requestHeaders = {}
     for own k,v of req.headers
       do (k,v) =>
-        req.headers[k] = @visitRequestHeader(k?.toLowerCase(), v)
+        @requestHeaders[k] = @visitRequestHeader(k?.toLowerCase(), v)
     if @g.DEBUG_REQ_HEADERS
       console.log('Request headers --------->>>')
       p(req.headers)
@@ -42,6 +45,38 @@ class ProxyStream extends stream.Stream
         @type = HTML
       else if @isScript || value?.match(/javascript/i)
         @type = JS
+
+  setFinishingCallback: (cb) ->
+    @finishingCallback = cb
+
+  finish: ->
+    @findUser =>
+      @setCookies =>
+        @finishingCallback(@requestHeaders)
+
+  findUser: (next) ->
+    userId = @req.session.userId
+    if userId
+      User.findById userId, (err, doc) =>
+        if doc
+          @user = doc
+          next()
+        else
+          @user = new User()
+          @user.save =>
+            @req.session.userId = @user._id
+            next()
+    else
+      @user = new User()
+      @user.save =>
+        @req.session.userId = @user._id
+        next()
+
+  setCookies: (next) ->
+    # - remove all cookies that start with xtnd.*
+    # - find all hostname specific cookies
+    # - find all wildcard domain cookies
+    next()
 
   pipefilter: (resp, dest) ->
     if @g.DEBUG_RES_HEADERS
@@ -67,7 +102,9 @@ class ProxyStream extends stream.Stream
             'domain=' + host + ';'
           )
       @res.removeHeader('set-cookie')
+      #
       # TODO: save cookies here
+      #
       @res.setHeader('set-cookie', newCookies)
     if @g.DEBUG_RES_HEADERS
       console.log('Response headers <<<---------')
@@ -101,9 +138,6 @@ class ProxyStream extends stream.Stream
         return @g.xtnd.normalUrl(value)
       when 'referer'
         return @g.xtnd.normalUrl(value)
-      when 'cookies'
-        # set cookies here
-        return value
     return value
 
   choosePipe: ->

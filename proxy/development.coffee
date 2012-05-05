@@ -3,7 +3,6 @@ gd = require('./lib/guide')
 inspect = require('eyes').inspector(maxLength: 20000)
 m8 = require('modul8')
 fs = require('fs')
-require('long-stack-traces')
 coffee = require('coffee-script')
 express = require('express')
 

@@ -173,6 +173,15 @@ xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
+  # if name == 'addEventListener'
+  #   if typeof(args[1]) == 'function'
+  #     eventName = args[0]
+  #     orig = args[1]
+  #     mylistener = (evt) ->
+  #       console.log eventName, evt
+  #       orig(evt)
+  #     args[1] = mylistener
+  #   obj[name].apply(caller, args)
   if isLocation(obj) && isOneOf('replace', name)
     obj[name].apply(caller, [proxiedUrl(args[0])])
   else if isDocument(obj) && isOneOf('write writeln appendchild', name)
