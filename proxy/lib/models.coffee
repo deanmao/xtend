@@ -40,8 +40,11 @@ Cookie.virtual('raw').set (cookieStr) ->
 Cookie.methods.assignKey = () ->
   @key = "#{@session_id}--#{@domain}--#{@name}"
 
+Cookie.methods.nameValueString = () ->
+  "#{@name}=#{@value}"
+
 Cookie.methods.toCookieString = (host) ->
-  str = "#{@name}=#{encodeURIComponent(@value)}"
+  str = "#{@name}=#{@value}"
   if host != @domain
     str += ";Domain=#{@domain}"
   if @path
@@ -53,7 +56,7 @@ Cookie.methods.toCookieString = (host) ->
   str
 
 Cookie.methods.domainlessCookieString = (guide) ->
-  str = "#{@name}=#{encodeURIComponent(@value)}"
+  str = "#{@name}=#{@value}"
   if @path
     str += ";Path=#{@path}"
   if @secure

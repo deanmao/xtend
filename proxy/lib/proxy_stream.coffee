@@ -51,13 +51,13 @@ class ProxyStream extends stream.Stream
 
   setRequestCookies: (cookieString) ->
     if cookieString
-      # dp "using these cookies in remote request"
-      # dp cookieString.split(', ')
+      # dp "using these cookies in remote request for #{@host}"
+      # dp cookieString.split('; ')
       @requestHeaders['cookie'] = cookieString
 
   setResponseCookies: (cookies) ->
     # if cookies?.length > 0
-      # dp "using these cookies in client response"
+      # dp "using these cookies in client response for #{@host}"
       # dp cookies
       # @res.setHeader('set-cookie', cookies)
 

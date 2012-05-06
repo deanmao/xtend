@@ -24,20 +24,21 @@ class CookieHandler
       cb()
 
   processResponse: (cookies) ->
-    @setResponseCookies(cookies)
+    if cookies
+      @setResponseCookies(cookies)
 
   setRequestCookies: (next) ->
     host = @proxy.host
     rawCookies = []
     parts = host.split('.')
-    domain = '.' + parts[1..-1].join('.')
+    domain = parts[1..-1].join('.')
     Cookie.find({}).where('session_id', @sessionId)
-      .where('domain').in([domain, host])
+      .where('domain').in([domain, host, '.'+domain])
       .run (err, docs) =>
         if docs
           for cookie in docs
             do (cookie) =>
-              val = cookie.toCookieString(host)
+              val = cookie.nameValueString()
               rawCookies.push(val)
               delete @requestCookies[cookie.name]
         for own name, value of @requestCookies
@@ -55,8 +56,8 @@ class CookieHandler
                               key: c.key
                             })},
                             {upsert: true}, logIfError
-              rawCookies.push(c.toCookieString(host))
-        @proxy.setRequestCookies(rawCookies.join(', '))
+              rawCookies.push(c.nameValueString())
+        @proxy.setRequestCookies(rawCookies.join('; '))
         next()
 
   setResponseCookies: (cookies) ->
@@ -74,6 +75,7 @@ class CookieHandler
     for cookieStr in cookies
       do (cookieStr) =>
         c = new Cookie()
+        console.log(cookieStr)
         c.set('raw', cookieStr)
         c.session_id = @sessionId
         unless c.domain

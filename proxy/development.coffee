@@ -10,8 +10,6 @@ mongoose = require('mongoose')
 mongoose.connect('mongodb://localhost/xtnd')
 
 guide = new gd.Guide(
-  REWRITE_HTML: true
-  REWRITE_JS: true
   host: 'myapp.dev'
   esprima: require('./lib/client/esprima')
   codegen: require('./lib/client/escodegen')

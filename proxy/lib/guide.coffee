@@ -15,6 +15,8 @@ convertPropertyToLiteral = (binding, node) ->
       {type: 'Literal', value: binding.name}
 
 class Guide
+  # REWRITE_HTML: false
+  # REWRITE_JS: false
   REWRITE_HTML: true
   REWRITE_JS: true
   # DEBUG_REQ_HEADERS: true

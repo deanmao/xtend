@@ -113,6 +113,7 @@ xtnd.assign = (obj, property, value, operation) ->
       return null
     else if isDocument(obj)
       if property?.match(/cookie/i)
+        console.log('setting document.cookie with', value)
         obj[property] = value # TODO
       else if property?.match(/domain/i)
         obj[property] = toProxiedHost(document.domain)
