@@ -1,11 +1,9 @@
 stream = require('stream')
 request = require('request')
-models = require('./models')
-User = models.User
-Cookie = models.Cookie
-inspect = require('eyes').inspector(maxLength: 20000)
+dp = require('eyes').inspector(maxLength: 20000)
 zlib = require 'zlib'
-p = () -> inspect(arguments...)
+CookieHandler = require('./cookie_handler')
+
 BINARY = 1
 JS = 2
 HTML = 3
@@ -24,6 +22,7 @@ class ProxyStream extends stream.Stream
     @type = BINARY
     @skip = skip
     @protocol = protocol
+    @cook = new CookieHandler(req.session.id, req.cookies, @)
     @host = req.headers.host
     @isScript = isScript
     if @isScript
@@ -46,59 +45,30 @@ class ProxyStream extends stream.Stream
       else if @isScript || value?.match(/javascript/i)
         @type = JS
 
-  setFinishingCallback: (cb) ->
-    @finishingCallback = cb
+  setSessionId: (id) ->
+    @sessionId = id
+    @req.session.sessionId = id
 
-  finish: ->
-    @findUser =>
-      p @req.headers.cookie
-      p @req.cookies
-      @finishingCallback(@requestHeaders)
-      # @setCookies =>
+  setRequestCookies: (cookieString) ->
+    if cookieString
+      # dp "using these cookies in remote request"
+      # dp cookieString.split(', ')
+      @requestHeaders['cookie'] = cookieString
 
-  findUser: (next) ->
-    userId = @req.session.userId
-    if userId
-      User.findById userId, (err, doc) =>
-        if doc
-          @user = doc
-          next()
-        else
-          @user = new User()
-          @user.save =>
-            @req.session.userId = @user._id
-            next()
-    else
-      @user = new User()
-      @user.save =>
-        @req.session.userId = @user._id
-        next()
+  setResponseCookies: (cookies) ->
+    # if cookies?.length > 0
+      # dp "using these cookies in client response"
+      # dp cookies
+      # @res.setHeader('set-cookie', cookies)
 
-  setCookies: (next) ->
-    # - find all hostname specific cookies
-    # - find all wildcard domain cookies
-    currentCookies = @req.cookies
-    cookies = []
-    parts = @host.split('.')
-    domain = parts[1..-1].join('.')
-    host = @host
-    query = Cookie.find({})
-    query.where('user_id', @user._id)
-      .where('domain').in([domain, host])
-      .run (err, docs) =>
-        for cookie in docs
-          do (cookie) =>
-            cookies.push(cookie.toCookieString(host, currentCookies))
-        for own name, value of currentCookies
-          do (name, value) =>
-            cookies.push("#{name}=#{encodeURIComponent(value)}")
-        @requestHeaders['cookie'] = cookies.join(', ')
-        next()
+  process: (next) ->
+    @cook.processRequest ->
+      next()
 
   pipefilter: (resp, dest) ->
     if @g.DEBUG_RES_HEADERS
       console.log('Unmodified Response headers <<<---------')
-      p(resp.headers)
+      dp(resp.headers)
     for own k,v of resp.headers
       do (k,v) =>
         val = @visitResponseHeader(k, v)
@@ -107,77 +77,12 @@ class ProxyStream extends stream.Stream
         else
           @res.removeHeader(k)
     @res.statusCode = resp.statusCode
-    cookies = resp.headers['set-cookie']
     @res.removeHeader('set-cookie')
-    if cookies
-      newCookies = []
-      @saveCookies(cookies)
-      for cookie in cookies
-        do (cookie) =>
-          newCookies.push(@serializeCookie(@parseCookie(cookie)))
-      @res.setHeader('set-cookie', newCookies)
+    @cook.processResponse(resp.headers['set-cookie'])
     if @g.DEBUG_RES_HEADERS
       console.log('Response headers <<<---------')
-      p(@res._headers)
+      dp(@res._headers)
     @choosePipe()
-
-  serializeCookie: (obj) ->
-    pairs = [obj.name + '=' + encodeURIComponent(obj.value)]
-    if obj.path
-      pairs.push('path=' + obj.path)
-    if obj.expires
-      pairs.push('expires=' + obj.expires.toUTCString())
-    if obj.httponly
-      pairs.push('httpOnly')
-    if obj.secure
-      pairs.push('secure')
-    pairs.join('; ')
-
-  parseCookie: (cookieStr) ->
-    parts = cookieStr.split(/;\s*/)
-    cookie = {}
-    for part in parts
-      do (part) =>
-        if part.match(/^httponly/i)
-          cookie.httponly = true
-        else if part.match(/^secure/i)
-          cookie.secure = true
-        else
-          x = part.split(/\=/)
-          name = x[0]
-          value = x[1..-1].join('=')
-          if name.match(/domain/i)
-            cookie.domain = value
-          else if name.match(/expires/i)
-            cookie.expires = value
-          else if name.match(/path/i)
-            cookie.path = value
-          else
-            cookie.name = name
-            cookie.value = value
-    return cookie
-
-  saveCookies: (cookies) ->
-    for cookieStr in cookies
-      do (cookieStr) =>
-        cookie = @parseCookie(cookieStr)
-        domain = cookie.domain || @host
-        Cookie.find({user_id: @user._id, name: cookie.name, domain: domain}, (err, docs) =>
-          if docs.length == 0
-            c = new Cookie()
-            c.user_id = @user._id
-          else if docs[0]
-            c = docs[0]
-          if c
-            c = docs[0]
-            c.domain = domain
-            c.path = cookie.path
-            c.name = cookie.name
-            c.value = cookie.value
-            c.secure = cookie.secure
-            c.httponly = cookie.httponly
-            c.save()
-        )
 
   visitResponseHeader: (name, value) ->
     lowered = name.toLowerCase()

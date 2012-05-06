@@ -38,12 +38,12 @@ module.exports = (options) ->
         return
       req.headers.host = host
       stream = new ProxyStream(req, res, guide, isScript, protocol, skip)
-      stream.setFinishingCallback (requestHeaders) =>
+      stream.process =>
         remoteReq = request(
           url: url
           method: req.method
           followRedirect: false
-          headers: requestHeaders
+          headers: stream.requestHeaders
           jar: false
           pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
         )
@@ -55,4 +55,3 @@ module.exports = (options) ->
           remoteReq.end()
         remoteReq.resume()
         buffer.resume()
-      stream.finish()

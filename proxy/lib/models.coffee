@@ -2,32 +2,54 @@ mongoose = require "mongoose"
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
-User = new Schema()
-
 Cookie = new Schema
-  domain: String
+  domain: { type: String, index: true }
   path: String
   name: String
   value: String
-  expiration: Date
+  expires: Date
   secure: Boolean
   httponly: Boolean
-  user_id: ObjectId
+  session_id: { type: String, index: true }
+  key: { type: String, index: { unique: true } }
 
-Cookie.methods.toCookieString = (host, currentCookies) ->
-  if currentCookies?[@name] && currentCookies[@name] != @value
-    @value = currentCookies[@name]
-    @save()
+Cookie.index({ domain: 1, name: 1, session_id: 1 })
+
+Cookie.virtual('raw').set (cookieStr) ->
+  parts = cookieStr.split(/;\s*/)
+  for part in parts
+    do (part) =>
+      if part.match(/^httponly/i)
+        @httponly = true
+      else if part.match(/^secure/i)
+        @secure = true
+      else
+        x = part.split(/\=/)
+        name = x[0]
+        value = x[1..-1].join('=')
+        if name.match(/domain/i)
+          @domain = value
+        else if name.match(/expires/i)
+          @expires = value
+        else if name.match(/path/i)
+          @path = value
+        else
+          @name = name
+          @value = value
+
+Cookie.methods.assignKey = () ->
+  @key = "#{@session_id}--#{@domain}--#{@name}"
+
+Cookie.methods.toCookieString = (host) ->
   str = "#{@name}=#{encodeURIComponent(@value)}"
   if host != @domain
-    str += ";Domain=.#{@domain}"
+    str += ";Domain=#{@domain}"
   if @path
     str += ";Path=#{@path}"
   if @secure
     str += ";Secure"
   if @httponly
     str += ";HttpOnly"
-  delete currentCookies[@name]
   str
 
 Cookie.methods.domainlessCookieString = (guide) ->
@@ -40,12 +62,5 @@ Cookie.methods.domainlessCookieString = (guide) ->
     str += ";HttpOnly"
   str
 
-# PREF=ID=f5cc013be6b38a59:FF=0:TM=1336232997:LM=1336232997:S=vRT-pAsGrZHU1UyE;
-#        expires=Mon, 05-May-2014 15:49:57 GMT; path=/; domain=.google-com.myapp.dev;
-Cookie.virtual('rawstring').set (rawString) ->
-  # parse the cookie and set values
-
-exports.User = mongoose.model('User', User)
 exports.Cookie = mongoose.model('Cookie', Cookie)
-mongoose.connect('mongodb://localhost/xtnd')
 

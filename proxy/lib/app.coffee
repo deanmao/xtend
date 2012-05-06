@@ -1,11 +1,20 @@
 express = require('express')
 filter = require('./filter')
 connect = require('connect')
+Session = require('connect-mongodb')
 
 exports.configureServer = (app, guide, scripts, protocol) ->
   app.configure ->
     app.use(express.cookieParser())
-    app.use(express.session(key: 'xtnd.sid', secret: 'you have to go there'))
+    app.use(
+      express.session(
+        key: 'xtnd.sid'
+        cookie:
+          domain: '.'+guide.host
+        secret: 'you have to go there'
+        store: new Session(url: 'mongodb://localhost/xtnd')
+      )
+    )
     app.use(filter(guide: guide, protocol: protocol))
     app.use(express.methodOverride())
     app.use(app.router)

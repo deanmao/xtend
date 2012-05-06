@@ -5,6 +5,9 @@ m8 = require('modul8')
 fs = require('fs')
 coffee = require('coffee-script')
 express = require('express')
+mongoose = require('mongoose')
+
+mongoose.connect('mongodb://localhost/xtnd')
 
 guide = new gd.Guide(
   REWRITE_HTML: true
