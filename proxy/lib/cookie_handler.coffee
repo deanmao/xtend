@@ -81,18 +81,22 @@ class CookieHandler
         unless c.domain
           c.domain = @proxy.host
         c.assignKey()
-        @responseCookies.push(c)
-        Cookie.update {key: c.key},
-                      {$set: prune({
-                        name: c.name
-                        value: c.value
-                        domain: c.domain
-                        secure: c.secure
-                        httponly: c.httponly
-                        path: c.path
-                        key: c.key
-                        session_id: @sessionId
-                      })},
-                      {upsert: true}, logIfError
+        if c.expires && c.expires.getTime() < Date.now()
+          # cookie is set to be deleted
+          Cookie.find(key: c.key).remove()
+        else
+          @responseCookies.push(c)
+          Cookie.update {key: c.key},
+                        {$set: prune({
+                          name: c.name
+                          value: c.value
+                          domain: c.domain
+                          secure: c.secure
+                          httponly: c.httponly
+                          path: c.path
+                          key: c.key
+                          session_id: @sessionId
+                        })},
+                        {upsert: true}, logIfError
 
 module.exports = CookieHandler

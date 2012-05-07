@@ -22,6 +22,7 @@ class ProxyStream extends stream.Stream
     @type = BINARY
     @skip = skip
     @protocol = protocol
+    dp req.cookies
     @cook = new CookieHandler(req.session.id, req.cookies, @)
     @host = req.headers.host
     @isScript = isScript
@@ -56,9 +57,9 @@ class ProxyStream extends stream.Stream
       @requestHeaders['cookie'] = cookieString
 
   setResponseCookies: (cookies) ->
-    # if cookies?.length > 0
-      # dp "using these cookies in client response for #{@host}"
-      # dp cookies
+    if cookies?.length > 0
+      dp "using these cookies in client response for #{@host}"
+      dp cookies
       # @res.setHeader('set-cookie', cookies)
 
   process: (next) ->
@@ -137,6 +138,7 @@ class ProxyStream extends stream.Stream
   end: ->
     @emit 'end'
 
+# TODO: Save html output into files for debugging later....
 class ContentStream extends stream.Stream
   writable: true
   constructor: (req, res, type, guide) ->

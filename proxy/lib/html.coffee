@@ -50,7 +50,7 @@ class Handler
           else if @g.tester.isInlineJsAttribute(key)
             value = @g.util.removeHtmlComments(el.raw)
             value = @g.util.decodeChars(value)
-            value = '(function(){' + value + '})()'
+            value = '{' + value + '}'
             value = @rewriteJS(value, {indent: '', newline: ''})
             # value = @g.util.simpleEncode(value)
             attributes[key] = value

@@ -30,7 +30,7 @@ scripts = (res) ->
   m8('./lib/browser.coffee').register('.coffee', (code,bare) ->
     coffee.compile(code, {bare: bare})
   ).compile (code) ->
-    res.setHeader('Content-Type', 'application/x-javascript')
+    res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
     res.send(code)
 
 http = express.createServer()

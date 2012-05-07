@@ -1,6 +1,5 @@
 mongoose = require "mongoose"
 Schema = mongoose.Schema
-ObjectId = Schema.ObjectId
 
 Cookie = new Schema
   domain: { type: String, index: true }
@@ -30,7 +29,9 @@ Cookie.virtual('raw').set (cookieStr) ->
         if name.match(/domain/i)
           @domain = value
         else if name.match(/expires/i)
-          @expires = value
+          try
+            @expires = new Date(value)
+          catch e
         else if name.match(/path/i)
           @path = value
         else

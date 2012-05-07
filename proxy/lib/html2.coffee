@@ -65,28 +65,30 @@ class Handler
       when 'tag'
         if el.name[0] == '/'
           @insideScript = false
-          @appendEndTag(el)
+          if el.raw
+            @appendEndTag(el)
+          else
+            @appendSelfCloseTag(el)
         else
           if el.name?.match(/^script$/i)
             @insideScript = true
-            @tagName = el.name
-          else
-            @tagName = el.name
           @appendCloseStartTag()
-          @visit('before', @tagName)
+          @visit('before', el.name)
           @appendStartTag(el)
+          @tagName = el.name
       when 'attr'
         attrib = el.name
         value = el.data
         if @g.tester.isHotTagAttribute(@tagName, attrib)
           value2 = @g.xtnd.proxiedUrl(value)
-          if @tagName.match(/script/i)
+          if @tagName.match(/^script/i)
             value2 = value2 + @g.FORCE_SCRIPT_SUFFIX
           @appendAttr(attrib, value2)
         else if @g.tester.isInlineJsAttribute(attrib)
           if value
             value = @g.util.removeHtmlComments(value)
-            value = '(function(){' + @g.util.decodeChars(value) + '})()'
+            value = @g.util.decodeChars(value)
+            value = '{' + value + '}'
             value = @rewriteJS(value, {newline: '', indent: ''})
             # value = @g.util.simpleEncode(value)
             @appendAttr(attrib, value)
@@ -97,7 +99,7 @@ class Handler
       when 'cdata'
         @appendRaw('<![CDATA[' + el.data+ ']]>')
       when 'doctype'
-        @appendRaw('<!DOCTYPE' + el.data + '>')
+        @appendRaw('<!DOCTYPE' + el.data + '>\n')
 
   appendAttr: (name, value) ->
     @output += ' ' + name + '="' + (value || '') + '"'
@@ -105,6 +107,10 @@ class Handler
   appendStartTag: (el) ->
     @closeStartTag = true
     @output += '<' + el.name
+
+  appendSelfCloseTag: (el) ->
+    @output += ' /'
+    @appendCloseStartTag()
 
   appendEndTag: (el) ->
     @appendCloseStartTag()

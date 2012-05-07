@@ -153,9 +153,9 @@ if typeof(window) != 'undefined'
   window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
     url = proxiedUrl(url) + _guide.XHR_SUFFIX
     _open.apply(this, [method, url, async, user, pass])
-  _replace = document.location.replace
-  document.location.replace = (url) ->
-    _replace.apply(document.location, [proxiedUrl(url)])
+  # _replace = document.location.replace
+  # document.location.replace = (url) ->
+  #   _replace.apply(document.location, [proxiedUrl(url)])
 
 
 traverseNode = (node, parent) ->
