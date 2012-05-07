@@ -19,6 +19,7 @@ class Guide
   # REWRITE_JS: false
   REWRITE_HTML: true
   REWRITE_JS: true
+  DEBUG_OUTPUT_HTML: true
   # DEBUG_REQ_HEADERS: true
   # DEBUG_RES_HEADERS: true
   PASSTHROUGH: false

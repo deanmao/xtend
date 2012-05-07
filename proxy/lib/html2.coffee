@@ -45,10 +45,14 @@ class Handler
             try
               value = @g.util.removeHtmlComments(el.data)
               value = @g.util.decodeInlineChars(value)
-              value = @rewriteJS(value)
+              value = @rewriteJS(value, {
+                nodeVisitor: (node) ->
+                  if node.type == 'Literal' && typeof(node.value) == 'string'
+                    node.value = node.value.replace(/<\//g, '<\\/')
+              })
               # value = @g.util.simpleEncode(value)
-              # TODO HACK:
-              value = value.replace(/<\//g, '<\\/')
+              # TODO HACK: -- this makes js code bad if inside a regex
+              # value = value.replace(/<\//g, '<\\/')
               # value = @g.makeSafe(value)
               @appendText('\n\n'+value+'\n\n')
             catch e
@@ -79,6 +83,8 @@ class Handler
       when 'attr'
         attrib = el.name
         value = el.data
+        if @insideScript && attrib == 'type' && !value.match(/javascript/i)
+          @insideScript = false
         if @g.tester.isHotTagAttribute(@tagName, attrib)
           value2 = @g.xtnd.proxiedUrl(value)
           if @tagName.match(/^script/i)

@@ -282,7 +282,7 @@ function Parser (builder, options) {
             , name: match[1]
             };
     };
-    Parser.re_parseAttr_findValue = /\s*=\s*(?:'([^']*)'|"([^"]*)"|([^'"\s\/>]+))\s*/g;
+    Parser.re_parseAttr_findValue = /\s*=\s*(?:'([^']*)'|"([^"]*)"|([^'"\s>]+))\s*/g;
     Parser.re_parseAttr_findValue_last = /\s*=\s*['"]?(.*)$/g;
     Parser.prototype._parseAttr_findValue = function Parser$_parseAttr_findValue () {
         var state = this._state;
@@ -305,8 +305,12 @@ function Parser (builder, options) {
         if (state.pos + match[0].length !== Parser.re_parseAttr_findValue.lastIndex) {
             return null;
         }
+        var mzero = match[0];
+        if (mzero[mzero.length-1] === '/') {
+            mzero = mzero.slice(0, mzero.length - 1);
+        }
         return {
-              match: match[0]
+              match: mzero
             , value: match[1] || match[2] || match[3]
             };
     };
@@ -357,34 +361,31 @@ function Parser (builder, options) {
             }
             state.pos += value_data.match.length;
         } else {
-          // CRAP...  this stuff is majorly broken
-            if (state.data[state.pos-2] === ' ') { // TODO : state.data[state.pos-2] === ' ') {
+            if (Parser.re_parseAttr_splitValue.exec(state.data)) {
+              if (state.data[state.pos-1] === ' ' && state.data.length > state.pos) {
                 value_data = {
-                      match: ''
-                    , value: name_data.name
-                    };
-
+                  match: '',
+                  value: name_data.name
+                };
+              } else {
+                state.needData = true;
+                state.pos -= name_data.match.length;
+                return;
+              }
             } else {
-                Parser.re_parseAttr_splitValue.lastIndex = state.pos;
-                var charBeforeName = state.data[state.pos - name_data.match.length - 1]
-                if (charBeforeName === ' ' && !state.data[state.pos]) {
-                    state.needData = true;
-                    state.pos -= (name_data.match.length + 1);
-                    return;
-                } else if (Parser.re_parseAttr_splitValue.exec(state.data)) {
-                    state.needData = true;
-                    state.pos -= (name_data.match.length + 2);
-                    return;
-                }
-                value_data = {
-                      match: ''
-                    , value: null
-                    };
+              value_data = {
+                match: '',
+                value: null
+              };
             }
-        }
-        state.lastTag.raw += name_data.match + value_data.match;
+          }
+          state.lastTag.raw += name_data.match + value_data.match;
 
-        this._writePending({ type: Mode.Attr, name: name_data.name, data: value_data.value });
+          this._writePending({
+            type: Mode.Attr,
+            name: name_data.name,
+            data: value_data.value
+          });
     };
 
     Parser.re_parseCData_findEnding = /\]{1,2}$/;

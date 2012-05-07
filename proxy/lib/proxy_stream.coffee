@@ -1,5 +1,6 @@
 stream = require('stream')
 request = require('request')
+fs = require('fs')
 dp = require('eyes').inspector(maxLength: 20000)
 zlib = require 'zlib'
 CookieHandler = require('./cookie_handler')
@@ -7,6 +8,8 @@ CookieHandler = require('./cookie_handler')
 BINARY = 1
 JS = 2
 HTML = 3
+
+fileIndex = 0
 
 # we buffer up all the data if it's html or js, then send
 # all that data to the client.  I guess if we're
@@ -18,11 +21,11 @@ HTML = 3
 class ProxyStream extends stream.Stream
   writable: true
   constructor: (req, res, guide, isScript, protocol, skip) ->
+    dp req.url
     @g = guide
     @type = BINARY
     @skip = skip
     @protocol = protocol
-    dp req.cookies
     @cook = new CookieHandler(req.session.id, req.cookies, @)
     @host = req.headers.host
     @isScript = isScript
@@ -57,9 +60,9 @@ class ProxyStream extends stream.Stream
       @requestHeaders['cookie'] = cookieString
 
   setResponseCookies: (cookies) ->
-    if cookies?.length > 0
-      dp "using these cookies in client response for #{@host}"
-      dp cookies
+    # if cookies?.length > 0
+      # dp "using these cookies in client response for #{@host}"
+      # dp cookies
       # @res.setHeader('set-cookie', cookies)
 
   process: (next) ->
@@ -159,6 +162,14 @@ class ContentStream extends stream.Stream
       output = @htmlStreamParser(chunk.toString())
       if output.length != 0
         @emit 'data', output
+        if @g.DEBUG_OUTPUT_HTML
+          unless @debugfile
+            url = @req.headers.host + @req.url
+            console.log('writing file for: '+url)
+            fileIndex = fileIndex + 1
+            @debugfile = fs.openSync("./debug/html#{fileIndex}.html", 'w+')
+            fs.writeSync(@debugfile, "<!-- #{url} -->")
+          fs.writeSync(@debugfile, chunk.toString())
     else
       @list.push(chunk.toString())
 
@@ -189,5 +200,6 @@ class ContentStream extends stream.Stream
             console.log(data)
             @emit 'data', data
     @emit 'end'
-
+    if @debugfile && @g.DEBUG_OUTPUT_HTML
+      fs.closeSync(@debugfile)
 module.exports = ProxyStream

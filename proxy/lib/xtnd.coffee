@@ -168,6 +168,12 @@ traverseNode = (node, parent) ->
         if attr && _guide.tester.isHotTagAttribute(name, attr)
           value = child.getAttribute(attr)
           child.setAttribute(attr, proxiedUrl(value))
+        if name.match(/^script/i)
+          value = _guide.util.removeHtmlComments(child.innerText)
+          value = _guide.util.decodeInlineChars(value)
+          value = xtnd.proxiedJS(value)
+          value = value.replace(/<\//g, '<\\/')
+          child.innerText = value
         traverseNode(child, node)
 
 xtnd.methodCall = (obj, name, caller, args) ->
@@ -187,12 +193,23 @@ xtnd.methodCall = (obj, name, caller, args) ->
     obj[name].apply(caller, [proxiedUrl(args[0])])
   else if isDocument(obj) && isOneOf('write writeln appendchild', name)
     xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
+    value = args[0]
+    console.log('document.write', value.length)
     if name == 'writeln'
-      document.writeln(xtnd.documentWriteHtmlParser(args[0]))
+      document.writeln(xtnd.documentWriteHtmlParser(value))
+      # z = document.createElement('body')
+      # z.innerHTML = value
+      # traverseNode(z)
+      # document.writeln(z.innerHTML)
     else if name == 'write'
-      document.write(xtnd.documentWriteHtmlParser(args[0]))
+      document.write(xtnd.documentWriteHtmlParser(value))
+      # z = document.createElement('body')
+      # z.innerHTML = value
+      # traverseNode(z)
+      # document.write(z.innerHTML)
     else if name == 'appendchild'
-      document.appendChild(args[0])
+      traverseNode(value)
+      document.appendChild(value)
   if isXMLHttpRequest(obj)
     if name == 'open'
       [method, url, async, user, pass] = args

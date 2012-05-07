@@ -22,13 +22,15 @@ class Rewriter
       @ruleCache[patternStr] = rule
     rule
 
-  convert: (js) ->
+  convert: (js, options) ->
     if @g?.JS_DEBUG
       root = @esprima.parse(js, {loc: true})
     else
       root = @esprima.parse(js)
+    nodeVisitor = options.nodeVisitor
     traverse(root, (node, parent, key) =>
       matchingRule = null
+      nodeVisitor?(node)
       for rule in @rules
         do (rule) =>
           unless matchingRule
@@ -45,7 +47,7 @@ class Rewriter
     root
 
   convertToJs: (js, options) ->
-    @codegen.generate(@convert(js), options)
+    @codegen.generate(@convert(js, options), options)
 
 namePrefix = 'xtend_pattern__'
 Hole =

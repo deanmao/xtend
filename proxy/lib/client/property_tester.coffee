@@ -48,7 +48,7 @@ _hot_properties = """
 location url href cookie domain src innerhtml host hostname history documenturi
 baseuri port referrer parent top opener window parentwindow action
 """
-_hot_methods = 'setattribute write writeln getattribute open setrequestheader appendchild'
+_hot_methods = 'postmessage setattribute write writeln getattribute open setrequestheader appendchild'
 _window_attributes = 'location, url, href'
 _dom_location_attributes = 'src href action'
 _hot_references = 'location top parent'
