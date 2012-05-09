@@ -40,9 +40,10 @@ http.configure 'production', ->
 app.configureServer(http, guide, scriptSource, 'http')
   .listen(8080)
 
-key = fs.readFileSync('./ssl/key').toString()
-cert = fs.readFileSync('./ssl/cert').toString()
-https = express.createServer(key: key, cert: cert)
+key = fs.readFileSync('/home/prod/ssl/xtendthis.key').toString()
+ca = fs.readFileSync('/home/prod/ssl/xtendthis.ca-bundle').toString()
+cert = fs.readFileSync('/home/prod/ssl/xtendthis.crt').toString()
+https = express.createServer(key: key, cert: cert, ca: ca)
 https.configure 'production', ->
   https.use(express.errorHandler(dumpExceptions: false, showStack: false))
 app.configureServer(https, guide, scriptSource, 'https')
