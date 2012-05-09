@@ -9,7 +9,7 @@ tester = require('./client/property_tester')
 util = require('./client/util')
 
 guide = new gd.Guide(
-  host: 'myapp.dev'
+  host: 'xtendthis.com'
   esprima: esprima
   codegen: codegen
   htmlparser: htmlparser

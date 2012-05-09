@@ -13,7 +13,7 @@ mongoose.connect('mongodb://localhost/xtnd')
 
 guide = new gd.Guide(
   PRODUCTION: true
-  host: 'myapp.dev'
+  host: 'xtendthis.com'
   esprima: require('./lib/client/esprima')
   codegen: require('./lib/client/escodegen')
   htmlparser: require('./lib/client/htmlparser2')
@@ -38,7 +38,7 @@ http = express.createServer()
 http.configure 'production', ->
   http.use(express.errorHandler(dumpExceptions: false, showStack: false))
 app.configureServer(http, guide, scriptSource, 'http')
-  .listen(8000)
+  .listen(8080)
 
 key = fs.readFileSync('./ssl/key').toString()
 cert = fs.readFileSync('./ssl/cert').toString()

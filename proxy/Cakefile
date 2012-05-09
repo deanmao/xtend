@@ -30,5 +30,4 @@ task 'run', 'Run server', ->
     start('development.coffee')
 
 task 'production', 'Run production server', ->
-  dns()
   start('production.coffee')
