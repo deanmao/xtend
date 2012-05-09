@@ -14,10 +14,14 @@ class Rewriter
     @ruleCache = {}
     @rules = []
 
-  find: (patternStr, checker) ->
+  find: (patternStr, options, checker) ->
+    if typeof(options) == 'function'
+      checker = options
+      options = null
     rule = @ruleCache[patternStr]
     unless rule
-      rule = new Rule(patternStr, checker, @esprima)
+      rule = new Rule(patternStr, checker, @esprima, options)
+      rule.g = @g
       @rules[@rules.length] = rule
       @ruleCache[patternStr] = rule
     rule
@@ -27,7 +31,7 @@ class Rewriter
       root = @esprima.parse(js, {loc: true})
     else
       root = @esprima.parse(js)
-    nodeVisitor = options.nodeVisitor
+    nodeVisitor = options?.nodeVisitor
     traverse(root, (node, parent, key) =>
       matchingRule = null
       nodeVisitor?(node)
@@ -47,7 +51,8 @@ class Rewriter
     root
 
   convertToJs: (js, options) ->
-    @codegen.generate(@convert(js, options), options)
+    out = @convert(js, options)
+    @codegen.generate(out, options)
 
 namePrefix = 'xtend_pattern__'
 Hole =
@@ -87,8 +92,9 @@ clone = (obj) ->
   JSON.parse(JSON.stringify(obj))
 
 class Rule
-  constructor: (patternStr, checker, esprima) ->
+  constructor: (patternStr, checker, esprima, options) ->
     @esprima = esprima
+    @options = options
     @detect = @_process(patternStr)
     # if @detect.type == 'ExpressionStatement'
       # @detect = @detect.expression
@@ -102,11 +108,19 @@ class Rule
     traverse(tree, (node, parent, key) =>
       if node.name?.match(namePrefix)
         {name, hole} = fromSpecialName(node.name)
-        node.name = name
-        node.hole = hole if hole
-        node.fuzzy = true
+        if parent.type == 'ExpressionStatement'
+          parent.name = name
+          parent.hole = hole if hole
+          parent.fuzzy = true
+        else
+          node.name = name
+          node.hole = hole if hole
+          node.fuzzy = true
     )
-    tree.body[0]
+    if @options?.useExpression
+      tree.body[0].expression
+    else
+      tree.body[0]
 
   # returns true if we don't have rule matching function, or if the matching
   # function returns true
@@ -150,14 +164,14 @@ class Rule
   # bindingConversion should return null if it doesn't want to convert
   # anything
   _convertBinding: (binding, node) ->
-    @bindingConversion?(binding, node) || binding
+    @bindingConversion?(binding, node, @bindings) || binding
 
   sub: () ->
     # create a clone of substitution, replacing fuzzy nodes with values from bindings
     tree = clone(@substitution)
     traverse(tree, (node, parent, key) =>
       binding = @bindings[node.name]
-      if node.fuzzy && parent && key && binding
+      if node.fuzzy && parent && key
         if parent.constructor == Array && node.hole
           i = parseInt(key)
           for item in binding

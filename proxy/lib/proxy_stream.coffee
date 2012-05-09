@@ -4,6 +4,7 @@ fs = require('fs')
 dp = require('eyes').inspector(maxLength: 20000)
 zlib = require 'zlib'
 CookieHandler = require('./cookie_handler')
+BufferStream = require('bufferstream')
 
 BINARY = 1
 JS = 2
@@ -21,12 +22,10 @@ fileIndex = 0
 class ProxyStream extends stream.Stream
   writable: true
   constructor: (req, res, guide, isScript, protocol, skip) ->
-    dp req.url
     @g = guide
     @type = BINARY
     @skip = skip
     @protocol = protocol
-    @cook = new CookieHandler(req.session.id, req.cookies, @)
     @host = req.headers.host
     @isScript = isScript
     if @isScript
@@ -34,13 +33,6 @@ class ProxyStream extends stream.Stream
     @proxiedHost = @g.xtnd.toProxiedHost(@host)
     @res = res
     @req = req
-    @requestHeaders = {}
-    for own k,v of req.headers
-      do (k,v) =>
-        @requestHeaders[k] = @visitRequestHeader(k?.toLowerCase(), v)
-    if @g.DEBUG_REQ_HEADERS
-      console.log('Request headers --------->>>')
-      p(req.headers)
 
   _setContentType: (value) ->
     unless @skip
@@ -55,9 +47,10 @@ class ProxyStream extends stream.Stream
 
   setRequestCookies: (cookieString) ->
     if cookieString
-      # dp "using these cookies in remote request for #{@host}"
-      # dp cookieString.split('; ')
       @requestHeaders['cookie'] = cookieString
+    else
+      delete @requestHeaders['cookie']
+
 
   setResponseCookies: (cookies) ->
     # if cookies?.length > 0
@@ -66,7 +59,17 @@ class ProxyStream extends stream.Stream
       # @res.setHeader('set-cookie', cookies)
 
   process: (next) ->
-    @cook.processRequest ->
+    @requestHeaders = {}
+    for own k,v of @req.headers
+      do (k,v) =>
+        val = @visitRequestHeader(k?.toLowerCase(), v)
+        if val
+          @requestHeaders[k] = val
+    @cook = new CookieHandler(@req.session.id, @req.cookies, @)
+    @cook.processRequest =>
+      if @g.DEBUG_REQ_HEADERS
+        console.log('Request headers --------->>>')
+        dp(@requestHeaders)
       next()
 
   pipefilter: (resp, dest) ->
@@ -111,6 +114,8 @@ class ProxyStream extends stream.Stream
 
   visitRequestHeader: (name, value) ->
     switch name
+      when 'connection'
+        return 'close'
       when 'origin'
         return @g.xtnd.normalUrl(value)
       when 'referer'
@@ -123,13 +128,17 @@ class ProxyStream extends stream.Stream
         # if the stream came in compressed, we'll send it back out
         # compressed
         @res.setHeader('X-Pipe', 'compressed')
-        stream = new ContentStream(@req, @res, @type, @g)
-        @pipe(zlib.createGunzip()).pipe(stream)
+        buffer = new BufferStream()
+        stream = new ContentStream(@req, @res, @type, @g, buffer)
+        @pipe(zlib.createGunzip()).pipe(buffer)
+        buffer.pipe(stream)
         stream.pipe(zlib.createGzip()).pipe(@res)
       else
         @res.setHeader('X-Pipe', 'content')
-        stream = new ContentStream(@req, @res, @type, @g)
-        @pipe(stream)
+        buffer = new BufferStream()
+        stream = new ContentStream(@req, @res, @type, @g, buffer)
+        @pipe(buffer)
+        buffer.pipe(stream)
         stream.pipe(@res)
     else
       @res.setHeader('X-Pipe', 'passthrough')
@@ -144,12 +153,13 @@ class ProxyStream extends stream.Stream
 # TODO: Save html output into files for debugging later....
 class ContentStream extends stream.Stream
   writable: true
-  constructor: (req, res, type, guide) ->
+  constructor: (req, res, type, guide, buffer) ->
     @type = type
     @g = guide
     @res = res
     @req = req
     @list = []
+    @buffer = buffer
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
     else if @type == HTML
@@ -158,18 +168,19 @@ class ContentStream extends stream.Stream
 
   write: (chunk, encoding) ->
     if @type == HTML
+      @buffer.pause()
+      if @g.DEBUG_OUTPUT_HTML && chunk.length > 0
+        unless @debugfile
+          url = @req.headers.host + @req.url
+          fileIndex = fileIndex + 1
+          @debugfile = fs.openSync("./debug/html#{fileIndex}.html", 'w+')
+          fs.writeSync(@debugfile, "<!-- #{url} -->")
+        fs.writeSync(@debugfile, chunk.toString())
       # we'll stream the html
       output = @htmlStreamParser(chunk.toString())
       if output.length != 0
         @emit 'data', output
-        if @g.DEBUG_OUTPUT_HTML
-          unless @debugfile
-            url = @req.headers.host + @req.url
-            console.log('writing file for: '+url)
-            fileIndex = fileIndex + 1
-            @debugfile = fs.openSync("./debug/html#{fileIndex}.html", 'w+')
-            fs.writeSync(@debugfile, "<!-- #{url} -->")
-          fs.writeSync(@debugfile, chunk.toString())
+      @buffer.resume()
     else
       @list.push(chunk.toString())
 

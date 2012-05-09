@@ -21,7 +21,9 @@ class Handler
       output = @g.convertJs(code, options)
     catch e
       @g.p?('bad js from html2')
-      @g.p?(code)
+      console.log('------------------------------')
+      console.log(code)
+      console.log('==============================')
       @g.p?(@url)
     finally
       @g.esprima.multilineStrings = false
@@ -34,6 +36,10 @@ class Handler
 
   error: (err) ->
     console.log(err)
+
+  getOutput: () ->
+    @appendCloseStartTag()
+    @output
 
   write: (el) ->
     switch el.type
@@ -48,7 +54,7 @@ class Handler
               value = @rewriteJS(value, {
                 nodeVisitor: (node) ->
                   if node.type == 'Literal' && typeof(node.value) == 'string'
-                    node.value = node.value.replace(/<\//g, '<\\/')
+                    node.value = node.value.replace(/<\//g, 'asdffoo')
               })
               # value = @g.util.simpleEncode(value)
               # TODO HACK: -- this makes js code bad if inside a regex
@@ -94,8 +100,9 @@ class Handler
           if value
             value = @g.util.removeHtmlComments(value)
             value = @g.util.decodeChars(value)
-            value = '{' + value + '}'
+            value = '(function(){' + value + '})()'
             value = @rewriteJS(value, {newline: '', indent: ''})
+            value = value.replace(/\}\(\)\);$/, '').replace(/^\(function \(\) \{/, '')
             # value = @g.util.simpleEncode(value)
             @appendAttr(attrib, value)
           else

@@ -1,31 +1,15 @@
-# private methods & variables:
-skipNumericProperties = (name, node) ->
-  if name == 'prop' && node.name == undefined && node.type == 'Literal'
-    return false
-  return true
-
-skipRhsFunctionExpressions = (name, node) ->
-  if name == 'rhs' && node.type == 'FunctionExpression'
-    return false
-  return true
-
-convertPropertyToLiteral = (binding, node) ->
-  if node.name == 'prop'
-    if binding.type == 'Identifier'
-      {type: 'Literal', value: binding.name}
-
 class Guide
   # REWRITE_HTML: false
   # REWRITE_JS: false
   REWRITE_HTML: true
   REWRITE_JS: true
-  DEBUG_OUTPUT_HTML: true
-  # DEBUG_REQ_HEADERS: true
-  # DEBUG_RES_HEADERS: true
+  # DEBUG_OUTPUT_HTML: true
+  DEBUG_REQ_HEADERS: true
+  DEBUG_RES_HEADERS: true
+  # DEBUG_REWRITTEN_JS: true
   PASSTHROUGH: false
   JS_DEBUG: true
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
-  XHR_SUFFIX: '__XTND_XHR'
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -37,25 +21,51 @@ class Guide
     # ------------- js init:
     r = @jsRewriter = new @js.Rewriter(@esprima, @codegen, @)
     @xtnd.setGuide(@)
+
     # ------------- create js rewrite rules
-    # assignment, but skip function assignments like: a[x] = function(){}
-    r.find('@obj.@prop = @rhs', (name, node) =>
-      if name == 'rhs' && node.type == 'FunctionExpression'
-        return false
-      if name == 'prop' && node.type == 'Identifier' && !@tester.isHotProperty(node.name)
-        return false
+    convertPropertyToLiteral = (binding, node, allBindings) ->
+      if node.name == 'propx'
+        propBinding = allBindings['prop']
+        if propBinding.type == 'Identifier'
+          return {type: 'Literal', value: propBinding.name}
+        else
+          return {type: 'Literal', value: propBinding.value}
+
+    assignmentMatcher = (name, node) =>
+      if name == 'rhs'
+        if node.type == 'FunctionExpression'
+          return false
+        else if node.type == 'Literal' && typeof(node.value) != 'string'
+          return false
+      else if name == 'prop'
+        if node.type == 'Identifier'
+          if @tester.isHotProperty(node.name)
+            return true
+          else
+            return false
+        else if node.type == 'Literal'
+          if typeof(node.value) == 'string'
+            if @tester.isSpecial(node.value)
+              return true
+            else
+              return false
+          else
+            return false
+        else
+          return false
       return true
-    ).replaceWith("xtnd.assign(@obj, @prop, @rhs)", convertPropertyToLiteral)
 
-    # object field accessor assignment, but skip numeric fields like: obj[3]
-    r.find('@obj[@prop] = @rhs', skipNumericProperties)
-      .replaceWith("xtnd.assign(@obj, @prop, @rhs)")
+    r.find('@obj.@prop = @rhs', {useExpression: true}, assignmentMatcher)
+      .replaceWith("@obj.@prop = xtnd.get(@obj, @propx, @rhs)", convertPropertyToLiteral)
 
-    r.find('@obj.@prop += @rhs')
-      .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
+    r.find('@obj[@prop] = @rhs', {useExpression: true}, assignmentMatcher)
+      .replaceWith("@obj[@prop] = xtnd.get(@obj, @propx, @rhs)", convertPropertyToLiteral)
 
-    r.find('@obj[@prop] += @rhs', skipNumericProperties)
-      .replaceWith("xtnd.assign(@obj, @prop, @rhs, 'add')", convertPropertyToLiteral)
+    r.find('@obj.@prop += @rhs', {useExpression: true}, assignmentMatcher)
+      .replaceWith("@obj.@prop += xtnd.get(@obj, @propx, @rhs)", convertPropertyToLiteral)
+
+    r.find('@obj[@prop] += @rhs', {useExpression: true}, assignmentMatcher)
+      .replaceWith("@obj[@prop] += xtnd.get(@obj, @propx, @rhs)", convertPropertyToLiteral)
 
     checkHotMethod = (name, node) =>
       if name == 'method' && node.type == 'Identifier' && !@tester.isHotMethod(node.name)
@@ -69,6 +79,13 @@ class Guide
 
     r.find('eval(@x)')
       .replaceWith('eval(xtnd.eval(@x))')
+
+    if @DEBUG_REWRITTEN_JS
+      r.find('try { @stmts+ } catch (@e) { @cstmts+ }', (name, node) ->
+        if name == 'cstmts' && node.length == 0
+          return false
+        return true
+      ).replaceWith('try { @stmts+ } catch (@e) { console.log(@e); {@cstmts+} }')
 
     r.find('new ActiveXObject(@x+)')
       .replaceWith('new xtnd.ActiveXObject(@x+)')
@@ -106,7 +123,7 @@ class Guide
     if @REWRITE_HTML
       @htmlHandler.reset()
       @parser.parseComplete(code)
-      @htmlHandler.output
+      @htmlHandler.getOutput()
     else
       code
 
@@ -134,6 +151,9 @@ class Guide
       context.insertedSpecialJS = true
       '<script src="/x_t_n_d/scripts"></script>'
     else if name == 'head' && location == 'after' && !context.insertedSpecialJS
+      context.insertedSpecialJS = true
+      '<script src="/x_t_n_d/scripts"></script>'
+    else if name == 'body' && location == 'after' && !context.insertedSpecialJS
       context.insertedSpecialJS = true
       '<script src="/x_t_n_d/scripts"></script>'
 

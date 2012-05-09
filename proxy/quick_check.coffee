@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-xtnd.assign(a, 'src', c.src = e.src = g.src);
+e.fn.init.prototype=e.fn;
   """
 
 class Handler
@@ -66,12 +66,16 @@ else
     esprima = require('./lib/client/esprima')
     codegen = require './lib/client/escodegen'
     tester = require './lib/client/property_tester'
-    inspect esprima.parse(code)
-    convertPropertyToLiteral = (binding, node) ->
-      if node.name == 'prop'
-        if binding.type == 'Identifier'
-          {type: 'Literal', value: binding.name}
-    r = new js.Rewriter(esprima, codegen)
-    r.find('@obj.@prop = @rhs')
-      .replaceWith("xtnd.assign(@obj, @prop, @rhs)", convertPropertyToLiteral)
-    console.log(r.convertToJs(code, {newline: '', indent: ''}))
+    esprima.parse(code)
+    # convertPropertyToLiteral = (binding, node) ->
+    #   if node.name == 'prop'
+    #     if binding.type == 'Identifier'
+    #       {type: 'Literal', value: binding.name}
+    # r = new js.Rewriter(esprima, codegen)
+    # rule = r.find('try { @stmts+ } catch (@e) { @cstmts+ }', (name, node) ->
+    #   if name == 'cstmts' && node.length == 0
+    #     return false
+    #   return true
+    # ).replaceWith('try { @stmts+ } catch (@e) { console.log(@e); {@cstmts+} }')
+    # inspect rule.detect
+    # console.log(r.convertToJs(code))

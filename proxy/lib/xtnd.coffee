@@ -4,8 +4,6 @@ _guide = null
 _threeComponents = /^(https?):\/\/([^\/]*)(.*)$/
 _twoComponents = /^\/\/([^\/]*)(.*)$/
 
-_p = () -> console.log(arguments...)
-
 listToHash = (str) ->
   hash = {}
   str.replace /\w+/g, (x) ->
@@ -28,16 +26,12 @@ twoParts = (url) ->
   x = (url || '').match(_twoComponents) || []
   [x[1], x[2]]
 
-xtnd.setGuide = (guide) ->
-  _guide = guide
-
 toProxiedHost = xtnd.toProxiedHost = (host) ->
   host.replace(/\-/g, '--').replace(/\./g, '-').replace(/:/g, '--p--') + '.' + _guide.host
 
 toNormalHost = xtnd.toNormalHost = (proxiedHost) ->
   subdomain = proxiedHost.split('.')[0]
   subdomain.replace(/\-\-p\-\-/g, ':').replace(/\-/g, '.').replace(/\.\./g, '-')
-
 
 proxiedUrl = xtnd.proxiedUrl = (protocol, host, path) ->
   if 1 == arguments.length
@@ -77,15 +71,15 @@ normalUrl = xtnd.normalUrl = (protocol, host, path) ->
 
 xtnd.proxiedJS = (code) -> _guide.convertJs(code)
 xtnd.proxiedHtml = (code) -> _guide.convertHtml(code)
+xtnd.setGuide = (guide) -> _guide = guide
+xtnd.getGuide = () -> _guide
+xtnd.log = () -> console.log(arguments...)
 
 isWindow = (x) -> x?.setTimeout && x.setInterval && x.history
 isDocument = (x) -> x?.constructor == window.document.constructor
 isLocation = (x) -> x?.constructor == window.location.constructor
 isHtmlElement = (x) -> x?.nodeName && x.nodeType
 isXMLHttpRequest = (x) -> x?.constructor == XMLHttpRequest
-
-xtnd.log = () ->
-  console.log(arguments...)
 
 checkClickListener = () ->
   unless xtnd.addedClickListener
@@ -103,44 +97,43 @@ checkClickListener = () ->
           return el.href
         el = el.parentNode
 
-xtnd.assign = (obj, property, value, operation) ->
+xtnd.get = (obj, property, value) ->
   try
-    if operation == 'add'
-      value = obj[property] + value
-     if _guide.PASSTHROUGH
-       return (obj[property] = value)
-    if obj == null
-      return null
+    if _guide.PASSTHROUGH
+      return value
+    if value == null || property == null
+      return value
     else if isDocument(obj)
-      if property?.match(/cookie/i)
-        console.log('setting document.cookie with', value)
-        obj[property] = value # TODO
-      else if property?.match(/domain/i)
-        obj[property] = toProxiedHost(document.domain)
-      else if property?.match(/url/i)
-        obj[property] = value
-      else if property?.match(/location/i)
-        obj[property] = proxiedUrl(value)
-      else
-        obj[property] = value
+      switch property.toLowerCase()
+        when 'domain'
+          return document.domain
+          # toProxiedHost(value)
+        when 'location'
+          proxiedUrl(value)
+        when 'cookie'
+          # TODO
+          value
+        else
+          value
     else if isHtmlElement(obj)
       if isOneOf('src href action', property)
-        obj[property] = proxiedUrl(value)
+        proxiedUrl(value)
       else if isOneOf('innerhtml', property)
         x = document.createElement('div')
-        x.innerHTML = value
+        x.innerHTML = value.replace(/asdffoo/g, '</')
         value = xtnd.proxiedHtml(x.innerHTML)
-        obj[property] = value
+        value
       else
-        obj[property] = value
+        value
     else if isWindow(obj) && isOneOf('location, url, href', property)
-      obj[property] = proxiedUrl(value)
+      proxiedUrl(value)
     else if isLocation(obj) && isOneOf('location, url, href', property)
-      obj[property] = proxiedUrl(value)
+      proxiedUrl(value)
     else
-      obj[property] = value
+      value
   catch error
     _guide.p(error)
+    return value
 
 xtnd.eval = (code) ->
   if _guide.PASSTHROUGH
@@ -151,12 +144,10 @@ xtnd.eval = (code) ->
 if typeof(window) != 'undefined'
   _open = XMLHttpRequest.prototype.open
   window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
-    url = proxiedUrl(url) + _guide.XHR_SUFFIX
-    _open.apply(this, [method, url, async, user, pass])
-  # _replace = document.location.replace
-  # document.location.replace = (url) ->
-  #   _replace.apply(document.location, [proxiedUrl(url)])
-
+    url = proxiedUrl(url)
+    out = _open.apply(this, [method, url, async, user, pass])
+    this.setRequestHeader("x-xtnd-xhr", "yep")
+    return out
 
 traverseNode = (node, parent) ->
   children = node.children
@@ -168,45 +159,27 @@ traverseNode = (node, parent) ->
         if attr && _guide.tester.isHotTagAttribute(name, attr)
           value = child.getAttribute(attr)
           child.setAttribute(attr, proxiedUrl(value))
-        if name.match(/^script/i)
-          value = _guide.util.removeHtmlComments(child.innerText)
-          value = _guide.util.decodeInlineChars(value)
-          value = xtnd.proxiedJS(value)
-          value = value.replace(/<\//g, '<\\/')
-          child.innerText = value
+        # if name.match(/^script/i) <--------- TODO:  Do we actually need this?
+        #   value = _guide.util.removeHtmlComments(child.innerText)
+        #   value = _guide.util.decodeInlineChars(value)
+        #   value = xtnd.proxiedJS(value)
+        #   value = value.replace(/<\//g, '<\\/')
+        #   child.innerText = value
         traverseNode(child, node)
 
 xtnd.methodCall = (obj, name, caller, args) ->
   caller = obj
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
-  # if name == 'addEventListener'
-  #   if typeof(args[1]) == 'function'
-  #     eventName = args[0]
-  #     orig = args[1]
-  #     mylistener = (evt) ->
-  #       console.log eventName, evt
-  #       orig(evt)
-  #     args[1] = mylistener
-  #   obj[name].apply(caller, args)
   if isLocation(obj) && isOneOf('replace', name)
     obj[name].apply(caller, [proxiedUrl(args[0])])
   else if isDocument(obj) && isOneOf('write writeln appendchild', name)
     xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
     value = args[0]
-    console.log('document.write', value.length)
     if name == 'writeln'
       document.writeln(xtnd.documentWriteHtmlParser(value))
-      # z = document.createElement('body')
-      # z.innerHTML = value
-      # traverseNode(z)
-      # document.writeln(z.innerHTML)
     else if name == 'write'
       document.write(xtnd.documentWriteHtmlParser(value))
-      # z = document.createElement('body')
-      # z.innerHTML = value
-      # traverseNode(z)
-      # document.write(z.innerHTML)
     else if name == 'appendchild'
       traverseNode(value)
       document.appendChild(value)

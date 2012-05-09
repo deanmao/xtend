@@ -45,7 +45,7 @@ onrowexit onrowsdelete onrowsinserted onscroll onselectionchange onstart onstop
 ontimeerror
 """
 _hot_properties = """
-location url href cookie domain src innerhtml host hostname history documenturi
+location url href cookie domain src innerhtml innertext host hostname history documenturi
 baseuri port referrer parent top opener window parentwindow action
 """
 _hot_methods = 'postmessage setattribute write writeln getattribute open setrequestheader appendchild'
@@ -53,6 +53,7 @@ _window_attributes = 'location, url, href'
 _dom_location_attributes = 'src href action'
 _hot_references = 'location top parent'
 
+_all_strings = [_js_attributes, _hot_properties, _window_attributes, _dom_location_attributes].join(' ')
 
 listToHash = (str) ->
   hash = {}
@@ -76,4 +77,5 @@ testers = module.exports =
     _tag_attribute_pairs[tagName.toLowerCase()]
   isDomLocationAttribute: generateTester(_dom_location_attributes)
   isWindowAttribute: generateTester(_window_attributes)
+  isSpecial: generateTester(_all_strings)
 

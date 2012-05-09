@@ -38,8 +38,9 @@ class CookieHandler
         if docs
           for cookie in docs
             do (cookie) =>
-              val = cookie.nameValueString()
-              rawCookies.push(val)
+              unless cookie.name.match(/^xtnd/)
+                val = cookie.nameValueString()
+                rawCookies.push(val)
               delete @requestCookies[cookie.name]
         for own name, value of @requestCookies
           do (name, value) =>
@@ -75,7 +76,6 @@ class CookieHandler
     for cookieStr in cookies
       do (cookieStr) =>
         c = new Cookie()
-        console.log(cookieStr)
         c.set('raw', cookieStr)
         c.session_id = @sessionId
         unless c.domain

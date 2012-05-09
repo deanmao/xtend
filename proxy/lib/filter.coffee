@@ -12,7 +12,6 @@ BufferStream = require('bufferstream')
 module.exports = (options) ->
   guide = options.guide
   forceScriptSuffixRegExp = new RegExp(guide.FORCE_SCRIPT_SUFFIX, 'g')
-  xhrSuffixRegExp = new RegExp(guide.XHR_SUFFIX, 'g')
   protocol = options.protocol
   xtnd = guide.xtnd
   returnVal = (req, res, next) ->
@@ -28,8 +27,7 @@ module.exports = (options) ->
       if originalUrl.indexOf(guide.FORCE_SCRIPT_SUFFIX) != -1
         originalUrl = originalUrl.replace(forceScriptSuffixRegExp, '')
         isScript = true
-      if originalUrl.indexOf(guide.XHR_SUFFIX) != -1
-        originalUrl = originalUrl.replace(xhrSuffixRegExp, '')
+      if req.headers['x-xtnd-xhr']
         skip = true
       url = xtnd.normalUrl(protocol, req.headers.host, originalUrl)
       host = xtnd.toNormalHost(req.headers.host)
@@ -51,6 +49,7 @@ module.exports = (options) ->
         remoteReq.pipe(stream)
         buffer.on 'data', (chunk) ->
           remoteReq.write(chunk)
+          console.log(chunk.toString())
         buffer.on 'end', ->
           remoteReq.end()
         remoteReq.resume()
