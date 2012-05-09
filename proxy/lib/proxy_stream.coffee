@@ -3,6 +3,9 @@ request = require('request')
 fs = require('fs')
 dp = require('eyes').inspector(maxLength: 20000)
 zlib = require 'zlib'
+crypto = require 'crypto'
+models = require('./models')
+CachedFile = models.CachedFile
 CookieHandler = require('./cookie_handler')
 BufferStream = require('bufferstream')
 
@@ -11,6 +14,22 @@ JS = 2
 HTML = 3
 
 fileIndex = 0
+
+sha1 = (str) ->
+  sum = crypto.createHash('sha1')
+  sum.update(str)
+  sum.digest('hex')
+
+logIfError = (err, docs) =>
+  if err
+    dp err
+
+prune = (hash) ->
+  for own k,v of hash
+    do (k,v) ->
+      unless v
+        delete hash[k]
+  hash
 
 # we buffer up all the data if it's html or js, then send
 # all that data to the client.  I guess if we're
@@ -94,6 +113,18 @@ class ProxyStream extends stream.Stream
   visitResponseHeader: (name, value) ->
     lowered = name.toLowerCase()
     switch lowered
+      when 'cache-control'
+        if value?.match(/no\-cache/i)
+          @neverCache = true
+      when 'pragma'
+        if value?.match(/no\-cache/i)
+          @neverCache = true
+      when 'etag'
+        @alwaysCache = true
+        @cacheKey = sha1("#{@host}#{value}")
+      when 'last-modified'
+        if !@neverCache && !@cacheKey
+          @cacheKey = sha1("#{@host}#{@req.url}#{value}")
       when 'content-encoding'
         if value?.match(/(gzip|deflate)/i)
           @compressed = true
@@ -184,33 +215,100 @@ class ContentStream extends stream.Stream
     else
       @list.push(chunk.toString())
 
-  end: (x) ->
-    if @type == JS
-      data = @list.join('')
-      # if function/var is present in string, we assume JS
-      # else, we will try to parse it with json and if it fails
-      # go back to JS again
-      if data.match(/(function|var)/)
+  getJs: ->
+    data = @list.join('')
+    # if function/var is present in string, we assume JS
+    # else, we will try to parse it with json and if it fails
+    # go back to JS again
+    if data.match(/(function|var)/)
+      try
+        output = @g.convertJs(data)
+        return output
+      catch e
+        console.log('bad json:')
+        console.log(data)
+        return data
+    else
+      try
+        JSON.parse(data)
+        return data
+      catch e
         try
           output = @g.convertJs(data)
-          @emit 'data', output
-        catch e
-          console.log('bad json:')
+          return output
+        catch ee
+          console.log('bad js:')
           console.log(data)
-          @emit 'data', data
+          return data
+
+  updateCachedFile: ->
+    CachedFile.update {key: @cacheKey},
+                      {$set: prune({
+                        name: c.name
+                        path: c.path
+                        value: c.value
+                        domain: c.domain
+                        session_id: c.session_id
+                        key: c.key
+                      })},
+                      {upsert: true}, logIfError
+
+  cachedFilePath: ->
+    "#{@g.CACHED_FILES_PATH}/#{@cacheKey}.js"
+
+  loadOrSaveJs: ->
+    file = @cachedFilePath()
+    CachedFile.find(key: @cacheKey, (err, docs =>
+      if docs.length > 0
+        # make sure file exists
+        fs.readFile file, (err, data) =>
+          if err
+            # if file is not there, just do the usual stuff
+            data = @getJs()
+            @outputFile(data)
+            @emitJs(data)
+            @persistCachedKey()
+          else
+            @emitJs(data)
+            @persistCachedKey()
       else
-        try
-          JSON.parse(data)
-          @emit 'data', data
-        catch e
-          try
-            output = @g.convertJs(data)
-            @emit 'data', output
-          catch ee
-            console.log('bad js:')
-            console.log(data)
-            @emit 'data', data
+        data = @getJs()
+        @outputFile(data)
+        @emitJs(data)
+        @persistCachedKey()
+    )
+
+  persistCachedKey: ->
+    CachedKey.update {key: @cacheKey},
+                     {$set: prune({
+                       url: @host + @req.url
+                       last_access: new Date()
+                       key: @cacheKey
+                     })},
+                     {upsert: true}, logIfError
+
+  outputFile: (data) ->
+    fs.open file, 'w+', (err, fd) =>
+      unless err
+        fs.write fd, data, () =>
+          fs.close(fd)
+
+  emitJs: (js) ->
+    @emit 'data', js
     @emit 'end'
+
+  end: ->
+    if @type == JS
+      if @g.PRODUCTION
+        if !@neverCache && @cacheKey
+          @loadOrSaveJs()
+        else
+          @emitJs(@getJs())
+      else
+        @emitJs(@getJs())
+    else
+      @emit 'end'
     if @debugfile && @g.DEBUG_OUTPUT_HTML
       fs.closeSync(@debugfile)
+
 module.exports = ProxyStream

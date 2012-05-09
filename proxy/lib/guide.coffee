@@ -3,6 +3,7 @@ class Guide
   REWRITE_JS: true
   PASSTHROUGH: false
   PRODUCTION: false
+  CACHED_FILES_PATH: './cached'
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
   constructor: (config) ->
     # ------------- copy over config into instance variables

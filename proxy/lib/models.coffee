@@ -66,5 +66,11 @@ Cookie.methods.domainlessCookieString = (guide) ->
     str += ";HttpOnly"
   str
 
-exports.Cookie = mongoose.model('Cookie', Cookie)
+CachedFile = new Schema
+  key: { type: String, index: { unique: true } }
+  url: String
+  last_access: Date
 
+exports.CachedFile = mongoose.model('CachedFile', CachedFile)
+exports.Cookie = mongoose.model('Cookie', Cookie)
+exports.Cookie = mongoose.model('Cookie', Cookie)
