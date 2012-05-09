@@ -10,6 +10,13 @@ mongoose = require('mongoose')
 mongoose.connect('mongodb://localhost/xtnd')
 
 guide = new gd.Guide(
+  JS_DEBUG: true
+  # REWRITE_HTML: false
+  # REWRITE_JS: false
+  # DEBUG_OUTPUT_HTML: true
+  # DEBUG_REQ_HEADERS: true
+  # DEBUG_RES_HEADERS: true
+  # DEBUG_REWRITTEN_JS: true
   host: 'myapp.dev'
   esprima: require('./lib/client/esprima')
   codegen: require('./lib/client/escodegen')
@@ -30,7 +37,6 @@ scripts = (res) ->
   m8('./lib/browser.coffee').register('.coffee', (code,bare) ->
     coffee.compile(code, {bare: bare})
   ).compile (code) ->
-    res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
     res.send(code)
 
 http = express.createServer()

@@ -3,6 +3,7 @@ filter = require('./filter')
 connect = require('connect')
 Session = require('connect-mongodb')
 
+lastModifiedString = new Date().toString()
 exports.configureServer = (app, guide, scripts, protocol) ->
   app.configure ->
     app.use(express.cookieParser())
@@ -27,6 +28,8 @@ exports.configureServer = (app, guide, scripts, protocol) ->
   app.get '/x_t_n_d/:name', (req, res) ->
     name = req.params.name
     if name == 'scripts'
+      res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
+      res.setHeader('Last-Modified', lastModifiedString)
       if typeof(scripts) == 'function'
         scripts(res)
       else

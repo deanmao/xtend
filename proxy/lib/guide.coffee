@@ -1,14 +1,8 @@
 class Guide
-  # REWRITE_HTML: false
-  # REWRITE_JS: false
   REWRITE_HTML: true
   REWRITE_JS: true
-  # DEBUG_OUTPUT_HTML: true
-  DEBUG_REQ_HEADERS: true
-  DEBUG_RES_HEADERS: true
-  # DEBUG_REWRITTEN_JS: true
   PASSTHROUGH: false
-  JS_DEBUG: true
+  PRODUCTION: false
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
   constructor: (config) ->
     # ------------- copy over config into instance variables

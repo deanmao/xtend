@@ -12,6 +12,7 @@
     , "modul8": "0.16.0"
     , "mongoose": "2.6.3"
     , "bufferstream": "0.5.1"
+    , "uglify-js": "1.2.6"
     , "directory-tree-watcher": "0.0.5"
   }
 }
