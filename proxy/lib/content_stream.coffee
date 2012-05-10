@@ -23,11 +23,12 @@ prune = (hash) ->
 
 class ContentStream extends stream.Stream
   writable: true
-  constructor: (req, res, type, guide, buffer) ->
+  constructor: (req, res, type, guide, buffer, proxyStream) ->
     @type = type
     @g = guide
     @res = res
     @req = req
+    @proxyStream = proxyStream
     @list = []
     @buffer = buffer
     if @type == JS
@@ -80,57 +81,43 @@ class ContentStream extends stream.Stream
           console.log(data)
           return data
 
-  updateCachedFile: ->
-    CachedFile.update {key: @cacheKey},
-                      {$set: prune({
-                        name: c.name
-                        path: c.path
-                        value: c.value
-                        domain: c.domain
-                        session_id: c.session_id
-                        key: c.key
-                      })},
-                      {upsert: true}, logIfError
-
   cachedFilePath: ->
-    "#{@g.CACHED_FILES_PATH}/#{@cacheKey}.js"
+    "#{@g.CACHED_FILES_PATH}/#{@proxyStream.cacheKey}.js"
 
   loadOrSaveJs: ->
-    file = @cachedFilePath()
-    CachedFile.find(key: @cacheKey, (err, docs) =>
+    CachedFile.find(key: @proxyStream.cacheKey, (err, docs) =>
       if docs.length > 0
         # make sure file exists
-        fs.readFile file, (err, data) =>
+        fs.readFile @cachedFilePath(), (err, data) =>
           if err
             console.log 'file not found'
-            # if file is not there, just do the usual stuff
-            data = @getJs()
-            @outputFile(data)
-            @emitJs(data)
-            @persistCachedKey()
+            @createFileAndEmit()
           else
             console.log 'file found'
             @emitJs(data)
             @persistCachedKey()
       else
         console.log 'data not cached'
-        data = @getJs()
-        @outputFile(data)
-        @emitJs(data)
-        @persistCachedKey()
+        @createFileAndEmit()
     )
 
+  createFileAndEmit: ->
+    data = @getJs()
+    @outputFile(data)
+    @emitJs(data)
+    @persistCachedKey()
+
   persistCachedKey: ->
-    CachedKey.update {key: @cacheKey},
+    CachedKey.update {key: @proxyStream.cacheKey},
                      {$set: prune({
                        url: @host + @req.url
                        last_access: new Date()
-                       key: @cacheKey
+                       key: @proxyStream.cacheKey
                      })},
                      {upsert: true}, logIfError
 
   outputFile: (data) ->
-    fs.open file, 'w+', (err, fd) =>
+    fs.open @cachedFilePath(), 'w+', (err, fd) =>
       unless err
         fs.write fd, data, () =>
           fs.close(fd)
@@ -142,10 +129,10 @@ class ContentStream extends stream.Stream
   end: ->
     if @type == JS
       if true # @g.PRODUCTION
-        if !@neverCache && @cacheKey
+        if !@proxyStream.neverCache && @proxyStream.cacheKey
           @loadOrSaveJs()
         else
-          console.log 'not loading from cache', @cacheKey
+          console.log 'not loading from cache', @proxyStream.cacheKey
           @emitJs(@getJs())
       else
         @emitJs(@getJs())

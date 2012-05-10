@@ -144,14 +144,14 @@ class ProxyStream extends stream.Stream
         # compressed
         @res.setHeader('X-Pipe', 'compressed')
         buffer = new BufferStream()
-        stream = new ContentStream(@req, @res, @type, @g, buffer)
+        stream = new ContentStream(@req, @res, @type, @g, buffer, @)
         @pipe(zlib.createGunzip()).pipe(buffer)
         buffer.pipe(stream)
         stream.pipe(zlib.createGzip()).pipe(@res)
       else
         @res.setHeader('X-Pipe', 'content')
         buffer = new BufferStream()
-        stream = new ContentStream(@req, @res, @type, @g, buffer)
+        stream = new ContentStream(@req, @res, @type, @g, buffer, @)
         @pipe(buffer)
         buffer.pipe(stream)
         stream.pipe(@res)
