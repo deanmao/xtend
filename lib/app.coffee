@@ -1,6 +1,5 @@
 express = require('express')
 filter = require('./filter')
-connect = require('connect')
 Session = require('connect-mongodb')
 
 lastModifiedString = new Date().toString()
