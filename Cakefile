@@ -15,7 +15,7 @@ stream = (command, options, callback) ->
 
 dns = ->
   dnsNode?.kill()
-  options = ['lib/dns_server.coffee']
+  options = ['dns.coffee']
   dnsNode = stream 'coffee', options
 
 start = (file) ->

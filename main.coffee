@@ -4,6 +4,7 @@ m8 = require('modul8')
 pro = require("uglify-js").uglify
 jsp = require("uglify-js").parser
 coffee = require('coffee-script')
+DnsServer = require('./lib/dns_server').DnsServer
 
 exports.generateScripts = (mode, path, callback) ->
   if mode == 'production'
@@ -22,3 +23,12 @@ exports.generateScripts = (mode, path, callback) ->
       ).compile (code) ->
         res.send(code)
     callback(scripts)
+
+exports.dns = (host) ->
+  pattern = new RegExp(host)
+  server = new DnsServer(
+    dnsDomainPattern: pattern
+    timeout: (15 * 60)
+  )
+  console.log('starting dns...')
+  server.listen(20561)

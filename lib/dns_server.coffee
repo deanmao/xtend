@@ -42,9 +42,4 @@ class DnsServer extends dnsserver.Server
 
     res.send()
 
-server = new DnsServer(
-  dnsDomainPattern: /myapp.dev/
-  timeout: (15 * 60)
-)
-console.log('starting dns...')
-server.listen(20561)
+exports.DnsServer = DnsServer
