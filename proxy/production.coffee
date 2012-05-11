@@ -5,28 +5,20 @@ coffee = require('coffee-script')
 express = require('express')
 mongoose = require('mongoose')
 fs = require('fs')
+RedditGuide = require('./reddit_guide')
 
 pro = require("uglify-js").uglify
 jsp = require("uglify-js").parser
 
 mongoose.connect('mongodb://localhost/xtnd')
 
-guide = new gd.Guide(
+guide = new RedditGuide
   PRODUCTION: true
   host: 'xtendthis.com'
-  esprima: require('./lib/client/esprima')
-  codegen: require('./lib/client/escodegen')
-  htmlparser: require('./lib/client/htmlparser2')
-  xtnd: require('./lib/xtnd')
-  js: require('./lib/js')
-  html: require('./lib/html2')
-  tester: require('./lib/client/property_tester')
-  util: require('./lib/client/util')
   p: () -> return
-)
 
 scriptSource = null
-m8('./lib/production_browser.coffee').register('.coffee', (code,bare) ->
+m8('./reddit_guide.coffee').register('.coffee', (code,bare) ->
   coffee.compile(code, {bare: bare})
 ).compile (code) ->
   ast = jsp.parse(code)

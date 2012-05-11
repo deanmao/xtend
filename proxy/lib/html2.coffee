@@ -92,7 +92,7 @@ class Handler
         if @insideScript && attrib == 'type' && !value.match(/javascript/i)
           @insideScript = false
         if @g.tester.isHotTagAttribute(@tagName, attrib)
-          value2 = @g.xtnd.proxiedUrl(value)
+          value2 = @g.xtnd.proxiedUrl(value, {tag: @tagName})
           if @tagName.match(/^script/i)
             value2 = value2 + @g.FORCE_SCRIPT_SUFFIX
           @appendAttr(attrib, value2)

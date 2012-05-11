@@ -9,6 +9,7 @@ dp = require('eyes').inspector(maxLength: 20000)
 BINARY = 1
 JS = 2
 HTML = 3
+IMAGE = 4
 
 sha1 = (str) ->
   sum = crypto.createHash('sha1')
@@ -24,10 +25,12 @@ sha1 = (str) ->
 # pass it along to the response object immediately
 class ProxyStream extends stream.Stream
   writable: true
-  constructor: (req, res, guide, isScript, protocol, skip) ->
+  constructor: (req, res, guide, isScript, protocol, skip, normalUrl) ->
+    @done = false
     @g = guide
     @type = BINARY
     @skip = skip
+    @normalUrl = normalUrl
     @protocol = protocol
     @host = req.headers.host
     @isScript = isScript
@@ -43,6 +46,8 @@ class ProxyStream extends stream.Stream
         @type = HTML
       else if @isScript || value?.match(/javascript/i)
         @type = JS
+      else if value?.match(/image/)
+        @type = IMAGE
 
   setSessionId: (id) ->
     @sessionId = id
@@ -106,19 +111,21 @@ class ProxyStream extends stream.Stream
       when 'etag'
         @alwaysCache = true
         @cacheKey = sha1("#{@host}#{value}")
+        @res.setHeader('X-Pipe-Cache-Key', @cacheKey)
       when 'last-modified'
         if !@neverCache && !@cacheKey
           @cacheKey = sha1("#{@host}#{@req.url}#{value}")
+          @res.setHeader('X-Pipe-Cache-Key', @cacheKey)
       when 'content-encoding'
         if value?.match(/(gzip|deflate)/i)
           @compressed = true
       when 'location'
-        return @g.xtnd.proxiedUrl(value)
+        return @g.xtnd.proxiedUrl(value, {header: name})
       when 'access-control-allow-origin'
-        return @g.xtnd.proxiedUrl(value)
+        return @g.xtnd.proxiedUrl(value, {header: name})
       when 'content-type'
         @_setContentType(value)
-        if @type == JS || @type == HTML
+        if @type && @type != BINARY
           @res.removeHeader('content-length')
       when 'x-frame-options'
         return null
@@ -156,13 +163,28 @@ class ProxyStream extends stream.Stream
         buffer.pipe(stream)
         stream.pipe(@res)
     else
-      @res.setHeader('X-Pipe', 'passthrough')
-      @pipe(@res)
+      if @cacheKey && @type == IMAGE
+        # we should just redirect to the real image here instead, or redirect to a cdn image
+        @res.setHeader('X-Pipe', 'redirect')
+        @res.setHeader('X-Pipe-Content', 'image')
+        @res.setHeader('Location', @normalUrl)
+        """
+          content-length accept-ranges etag expires last-modified
+        """.replace /[\w\-]+/g, (name) =>
+          @res.removeHeader(name)
+        @res.statusCode = 301
+        @res.send('')
+        @done = true
+      else
+        @res.setHeader('X-Pipe', 'passthrough')
+        @pipe(@res)
 
   write: (chunk, encoding) ->
-    @emit 'data', chunk
+    unless @done
+      @emit 'data', chunk
 
   end: ->
-    @emit 'end'
+    unless @done
+      @emit 'end'
 
 module.exports = ProxyStream

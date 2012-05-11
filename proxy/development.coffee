@@ -1,40 +1,24 @@
 app = require './lib/app'
-gd = require('./lib/guide')
 inspect = require('eyes').inspector(maxLength: 20000)
 m8 = require('modul8')
 fs = require('fs')
 coffee = require('coffee-script')
 express = require('express')
 mongoose = require('mongoose')
+RedditGuide = require('./reddit_guide')
 
 mongoose.connect('mongodb://localhost/xtnd')
 
-guide = new gd.Guide(
-  JS_DEBUG: true
-  # REWRITE_HTML: false
-  # REWRITE_JS: false
-  # DEBUG_OUTPUT_HTML: true
-  # DEBUG_REQ_HEADERS: true
-  # DEBUG_RES_HEADERS: true
-  # DEBUG_REWRITTEN_JS: true
+guide = new RedditGuide
   host: 'myapp.dev'
-  esprima: require('./lib/client/esprima')
-  codegen: require('./lib/client/escodegen')
-  htmlparser: require('./lib/client/htmlparser2')
-  xtnd: require('./lib/xtnd')
-  js: require('./lib/js')
   fs: fs
-  html: require('./lib/html2')
-  tester: require('./lib/client/property_tester')
-  util: require('./lib/client/util')
   p: () -> inspect(arguments...)
-)
 
 # clear console 4465
 console.log('.') for i in [0..30]
 
 scripts = (res) ->
-  m8('./lib/browser.coffee').register('.coffee', (code,bare) ->
+  m8('./reddit_guide.coffee').register('.coffee', (code,bare) ->
     coffee.compile(code, {bare: bare})
   ).compile (code) ->
     res.send(code)

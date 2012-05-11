@@ -35,7 +35,7 @@ module.exports = (options) ->
         res.send('')
         return
       req.headers.host = host
-      stream = new ProxyStream(req, res, guide, isScript, protocol, skip)
+      stream = new ProxyStream(req, res, guide, isScript, protocol, skip, url)
       stream.process =>
         remoteReq = request(
           url: url
@@ -45,6 +45,7 @@ module.exports = (options) ->
           jar: false
           pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
         )
+        res.setHeader('X-Original-Url', host + req.originalUrl)
         remoteReq.pause()
         remoteReq.pipe(stream)
         buffer.on 'data', (chunk) ->

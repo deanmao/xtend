@@ -69,6 +69,7 @@ Cookie.methods.domainlessCookieString = (guide) ->
 CachedFile = new Schema
   key: { type: String, index: { unique: true } }
   url: String
+  type: String
   last_access: Date
 
 exports.CachedFile = mongoose.model('CachedFile', CachedFile)

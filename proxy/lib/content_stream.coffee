@@ -7,6 +7,7 @@ dp = require('eyes').inspector(maxLength: 20000)
 BINARY = 1
 JS = 2
 HTML = 3
+IMAGE = 4
 
 fileIndex = 0
 
@@ -90,14 +91,11 @@ class ContentStream extends stream.Stream
         # make sure file exists
         fs.readFile @cachedFilePath(), (err, data) =>
           if err
-            console.log 'file not found'
             @createFileAndEmit()
           else
-            console.log 'file found'
             @emitJs(data)
-            @persistCachedKey()
+            @persistCachedFile()
       else
-        console.log 'data not cached'
         @createFileAndEmit()
     )
 
@@ -105,22 +103,21 @@ class ContentStream extends stream.Stream
     data = @getJs()
     @outputFile(data)
     @emitJs(data)
-    @persistCachedKey()
 
-  persistCachedKey: ->
-    CachedKey.update {key: @proxyStream.cacheKey},
-                     {$set: prune({
-                       url: @host + @req.url
-                       last_access: new Date()
-                       key: @proxyStream.cacheKey
-                     })},
-                     {upsert: true}, logIfError
+  persistCachedFile: ->
+    CachedFile.update {key: @proxyStream.cacheKey},
+                      {$set: prune({
+                        url: @proxyStream.host + @req.url
+                        last_access: new Date()
+                        type: 'js'
+                        key: @proxyStream.cacheKey
+                      })},
+                      {upsert: true}, logIfError
 
   outputFile: (data) ->
-    fs.open @cachedFilePath(), 'w+', (err, fd) =>
+    fs.writeFile @cachedFilePath(), data, (err) =>
       unless err
-        fs.write fd, data, () =>
-          fs.close(fd)
+        @persistCachedFile()
 
   emitJs: (js) ->
     @emit 'data', js
@@ -132,7 +129,6 @@ class ContentStream extends stream.Stream
         if !@proxyStream.neverCache && @proxyStream.cacheKey
           @loadOrSaveJs()
         else
-          console.log 'not loading from cache', @proxyStream.cacheKey
           @emitJs(@getJs())
       else
         @emitJs(@getJs())

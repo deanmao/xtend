@@ -5,6 +5,14 @@ class Guide
   PRODUCTION: false
   CACHED_FILES_PATH: './cached'
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
+  htmlparser: require('./client/htmlparser2')
+  esprima: require('./client/esprima')
+  codegen: require('./client/escodegen')
+  tester: require('./client/property_tester')
+  util: require('./client/util')
+  xtnd: require('./xtnd')
+  js: require('./js')
+  html: require('./html2')
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
@@ -107,6 +115,13 @@ class Guide
           throw e
     else
       code
+
+  toProxiedHost: (host, context) ->
+    host.replace(/\-/g, '--').replace(/\./g, '-').replace(/:/g, '--p--') + '.' + @host
+
+  toNormalHost: (proxiedHost) ->
+    subdomain = proxiedHost.split('.')[0]
+    subdomain.replace(/\-\-p\-\-/g, ':').replace(/\-/g, '.').replace(/\.\./g, '-')
 
   makeSafe: (code) ->
     "(function(){try{" + code + "}catch(e){xtnd.log('xtnd inline js error', e)}})()"
