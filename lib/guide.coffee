@@ -5,6 +5,7 @@ class Guide
   PRODUCTION: false
   CACHED_FILES_PATH: './cached'
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
+  INTERNAL_URL_PREFIX: '/___xtnd'
   htmlparser: require('./client/htmlparser2')
   esprima: require('./client/esprima')
   codegen: require('./client/escodegen')
@@ -159,13 +160,13 @@ class Guide
     # ------------- append our special script after head tag
     if name == 'script' && location == 'before' && !context.insertedSpecialJS
       context.insertedSpecialJS = true
-      '<script src="/x_t_n_d/scripts"></script>'
+      '<script src="'+@INTERNAL_URL_PREFIX+'/xtnd_scripts.js"></script>'
     else if name == 'head' && location == 'after' && !context.insertedSpecialJS
       context.insertedSpecialJS = true
-      '<script src="/x_t_n_d/scripts"></script>'
+      '<script src="'+@INTERNAL_URL_PREFIX+'/xtnd_scripts.js"></script>'
     else if name == 'body' && location == 'after' && !context.insertedSpecialJS
       context.insertedSpecialJS = true
-      '<script src="/x_t_n_d/scripts"></script>'
+      '<script src="'+@INTERNAL_URL_PREFIX+'/xtnd_scripts.js"></script>'
 
   log: () ->
     @p(arguments...)

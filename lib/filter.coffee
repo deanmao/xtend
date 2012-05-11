@@ -8,7 +8,7 @@ Session = require('connect-mongodb')
 # This is a connect module that performs the remote request if the url
 # is not an "internal" url.
 #
-# Internal urls begin with a path like: /x_t_n_d
+# Internal urls begin with a path like: /___xtnd
 #
 # All other requests have their data stream & headers sent to the remote
 # server, after being slightly modified.
@@ -33,13 +33,16 @@ module.exports = (options) ->
   returnVal = (req, res, next) ->
     sessionFunc req, res, ->
       originalUrl = req.originalUrl
-      if req.url == '/x_t_n_d/scripts'
-        res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
-        res.setHeader('Last-Modified', lastModifiedString)
-        if typeof(scripts) == 'function'
-          scripts(res)
+      if req.url.indexOf(guide.INTERNAL_URL_PREFIX) != -1
+        if req.url.match(/xtnd_scripts.js/)
+          res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
+          res.setHeader('Last-Modified', lastModifiedString)
+          if typeof(scripts) == 'function'
+            scripts(res)
+          else
+            res.send(scripts)
         else
-          res.send(scripts)
+          next()
       else if req.url == '/robots.txt'
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         res.send("User-agent: *\nDisallow: /\n")
