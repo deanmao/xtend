@@ -174,4 +174,7 @@ class Guide
   p: () ->
     # default to disable debug print
 
+if typeof(window) != 'undefined'
+  window.__xtnd_guide = Guide
+
 exports.Guide = Guide

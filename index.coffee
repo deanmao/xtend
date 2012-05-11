@@ -8,7 +8,7 @@ DnsServer = require('./lib/dns_server').DnsServer
 
 exports.generateScripts = (mode, path, callback) ->
   if mode == 'production'
-    m8('./lib/guide.coffee').register('.coffee', (code,bare) ->
+    m8('./lib/guide.coffee').libraries().list([path]).register('.coffee', (code,bare) ->
       coffee.compile(code, {bare: bare})
     ).compile (code) ->
       ast = jsp.parse(code)
@@ -18,7 +18,7 @@ exports.generateScripts = (mode, path, callback) ->
       callback(scriptSource)
   else
     scripts = (res) ->
-      m8('./lib/guide.coffee').register('.coffee', (code,bare) ->
+      m8('./lib/guide.coffee').libraries().list([path]).register('.coffee', (code,bare) ->
         coffee.compile(code, {bare: bare})
       ).compile (code) ->
         res.send(code)
