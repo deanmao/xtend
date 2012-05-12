@@ -129,8 +129,8 @@ class Handler
 
   appendEndTag: (el) ->
     @appendCloseStartTag()
-    @output += '<' + el.name + '>'
     @visit('end', el.name)
+    @output += '<' + el.name + '>'
 
   appendRaw: (str) ->
     @output += str
