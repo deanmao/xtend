@@ -1,3 +1,1 @@
-main = require('./main')
-
-main.dns('myapp.dev')
+require('./index').dns('myapp.dev')
