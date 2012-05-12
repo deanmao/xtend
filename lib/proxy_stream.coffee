@@ -93,6 +93,7 @@ class ProxyStream extends stream.Stream
           @res.removeHeader(k)
     @res.statusCode = resp.statusCode
     @res.setHeader('access-control-allow-headers', 'origin, x-xtnd-xhr')
+    @res.setHeader('access-control-allow-origin', '*')
     @res.removeHeader('set-cookie')
     @cook.processResponse(resp.headers['set-cookie'])
     if @g.DEBUG_RES_HEADERS
