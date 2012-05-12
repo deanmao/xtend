@@ -118,11 +118,18 @@ class Guide
       code
 
   toProxiedHost: (host, context) ->
-    host.replace(/\-/g, '--').replace(/\./g, '-').replace(/:/g, '--p--') + '.' + @host
+    subdomain = host.replace(/\-/g, '--').replace(/\./g, '-').replace(/:/g, '--p--')
+    if subdomain == ''
+      @host
+    else
+      subdomain + '.' + @host
 
   toNormalHost: (proxiedHost) ->
-    subdomain = proxiedHost.split('.')[0]
-    subdomain.replace(/\-\-p\-\-/g, ':').replace(/\-/g, '.').replace(/\.\./g, '-')
+    if proxiedHost == @host
+      proxiedHost
+    else
+      subdomain = proxiedHost.split('.')[0]
+      subdomain.replace(/\-\-p\-\-/g, ':').replace(/\-/g, '.').replace(/\.\./g, '-')
 
   makeSafe: (code) ->
     "(function(){try{" + code + "}catch(e){xtnd.log('xtnd inline js error', e)}})()"
