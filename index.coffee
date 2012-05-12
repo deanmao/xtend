@@ -22,7 +22,7 @@ exports.generateScripts = (path, callback) ->
   if 'production' == process.env.NODE_ENV
     compact __dirname + '/lib/guide.coffee', (baseCode) ->
       compact path, (customCode) ->
-        callback(uglify(baseCode) + '\n' + uglify(customCode))
+        callback(uglify(baseCode + customCode))
   else
     generator = (res) ->
       compact __dirname + '/lib/guide.coffee', (baseCode) ->
