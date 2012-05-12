@@ -163,7 +163,7 @@ class Guide
       asdf = (chunk) ->
         chunk
 
-  htmlVisitor: (location, name, context) ->
+  htmlVisitor: (location, name, context, url) ->
     # ------------- append our special script after head tag
     if name == 'script' && location == 'before' && !context.insertedSpecialJS
       context.insertedSpecialJS = true

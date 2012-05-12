@@ -4,7 +4,7 @@ class Handler
     @url = url
     if @g.htmlVisitor
       @visitor = (location, name, context) =>
-        @g.htmlVisitor(location, name, context)
+        @g.htmlVisitor(location, name, context, url)
     @output = ''
     @closeStartTag = false
     @counts = {}
