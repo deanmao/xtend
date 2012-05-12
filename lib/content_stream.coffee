@@ -125,7 +125,7 @@ class ContentStream extends stream.Stream
 
   end: ->
     if @type == JS
-      if true # @g.PRODUCTION
+      if @g.PRODUCTION
         if !@proxyStream.neverCache && @proxyStream.cacheKey
           @loadOrSaveJs()
         else
