@@ -6,23 +6,29 @@ jsp = require("uglify-js").parser
 coffee = require('coffee-script')
 DnsServer = require('./lib/dns_server').DnsServer
 
-exports.generateScripts = (mode, path, callback) ->
-  if mode == 'production'
-    m8('./lib/guide.coffee').libraries().list([path]).register('.coffee', (code,bare) ->
-      coffee.compile(code, {bare: bare})
-    ).compile (code) ->
-      ast = jsp.parse(code)
-      ast = pro.ast_mangle(ast)
-      ast = pro.ast_squeeze(ast)
-      scriptSource = pro.gen_code(ast)
-      callback(scriptSource)
+compact = (path, cb) ->
+  m8(path).register('.coffee', (code,bare) ->
+    coffee.compile(code, {bare: bare})
+  ).compile (code) ->
+    cb(code)
+
+uglify = (code) ->
+  ast = jsp.parse(code)
+  ast = pro.ast_mangle(ast)
+  ast = pro.ast_squeeze(ast)
+  pro.gen_code(ast)
+
+exports.generateScripts = (path, callback) ->
+  if 'production' == process.env.NODE_ENV
+    compact __dirname + '/lib/guide.coffee', (baseCode) ->
+      compact path, (customCode) ->
+        callback(uglify(baseCode) + uglify(customCode))
   else
-    scripts = (res) ->
-      m8('./lib/guide.coffee').libraries().list([path]).register('.coffee', (code,bare) ->
-        coffee.compile(code, {bare: bare})
-      ).compile (code) ->
-        res.send(code)
-    callback(scripts)
+    generator = (res) ->
+      compact __dirname + '/lib/guide.coffee', (baseCode) ->
+        compact path, (customCode) ->
+          res.send(baseCode + customCode)
+    callback(generator)
 
 exports.dns = (host) ->
   pattern = new RegExp(host)

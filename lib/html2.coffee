@@ -2,7 +2,9 @@ class Handler
   constructor: (guide, url) ->
     @g = guide
     @url = url
-    @visitor = @g.htmlVisitor
+    if @g.htmlVisitor
+      @visitor = (location, name, context) =>
+        @g.htmlVisitor(location, name, context)
     @output = ''
     @closeStartTag = false
     @counts = {}
