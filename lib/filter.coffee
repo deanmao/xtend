@@ -4,6 +4,7 @@ mongoose = require('mongoose')
 ProxyStream = require('./proxy_stream')
 BufferStream = require('bufferstream')
 Session = require('connect-mongodb')
+dp = require('eyes').inspector(maxLength: 50000)
 
 # This is a connect module that performs the remote request if the url
 # is not an "internal" url.
@@ -46,6 +47,23 @@ module.exports = (options) ->
       else if req.url == '/robots.txt'
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         res.send("User-agent: *\nDisallow: /\n")
+      else if req.method.toLowerCase() == 'options'
+        res.setHeader('access-control-allow-credentials', 'true')
+        res.setHeader('access-control-allow-origin', req.headers.origin)
+        res.setHeader('content-type', 'text/plain')
+        for own name,v of req.headers
+          do (name,v) =>
+            switch name.toLowerCase()
+              when 'access-control-request-origin'
+                res.setHeader('access-control-allow-origin', v)
+              when 'access-control-request-method'
+                res.setHeader('access-control-allow-methods', 'GET, PUT, DELETE, POST, OPTIONS')
+              when 'access-control-request-headers'
+                res.setHeader('access-control-allow-headers', v)
+                res.setHeader('access-control-expose-headers', v)
+              when 'access-control-request-credentials'
+                res.setHeader('access-control-allow-credentials', 'true')
+        res.send('')
       else
         buffer = new BufferStream()
         req.pipe(buffer)
@@ -78,7 +96,6 @@ module.exports = (options) ->
           remoteReq.pipe(stream)
           buffer.on 'data', (chunk) ->
             remoteReq.write(chunk)
-            console.log(chunk.toString())
           buffer.on 'end', ->
             remoteReq.end()
           remoteReq.resume()

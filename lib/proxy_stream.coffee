@@ -39,6 +39,8 @@ class ProxyStream extends stream.Stream
     @proxiedHost = @g.xtnd.toProxiedHost(@host)
     @res = res
     @req = req
+    # CORS is https://developer.mozilla.org/en/HTTP_access_control
+    @corsHeaders = {}
 
   _setContentType: (value) ->
     unless @skip
@@ -92,8 +94,11 @@ class ProxyStream extends stream.Stream
         else
           @res.removeHeader(k)
     @res.statusCode = resp.statusCode
-    @res.setHeader('access-control-allow-headers', 'origin, x-xtnd-xhr')
-    @res.setHeader('access-control-allow-origin', '*')
+    # @res.setHeader('access-control-allow-headers', 'origin, x-xtnd-xhr')
+    # @res.setHeader('access-control-allow-origin', '*')
+    for own k,v of @corsHeaders
+      do (k,v) =>
+        @res.setHeader(k, v)
     @res.removeHeader('set-cookie')
     @cook.processResponse(resp.headers['set-cookie'])
     if @g.DEBUG_RES_HEADERS
@@ -138,6 +143,13 @@ class ProxyStream extends stream.Stream
 
   visitRequestHeader: (name, value) ->
     switch name
+      when 'access-control-request-origin'
+        @corsHeaders['access-control-allow-origin'] = value
+      when 'access-control-request-method'
+        @corsHeaders['access-control-allow-methods'] = value
+      when 'access-control-request-headers'
+        @corsHeaders['access-control-allow-headers'] = value
+        @corsHeaders['access-control-expose-headers'] = value
       when 'connection'
         return 'close'
       when 'origin'
