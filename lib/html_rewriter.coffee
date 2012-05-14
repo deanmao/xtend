@@ -4,10 +4,10 @@ class HtmlRewriter
   constructor: (options) ->
     visitor = (location, name, context, url) =>
       @htmlVisitor(location, name, context, url)
-    @htmlHandler = new options.Handler(options.url, visitor, options.guide)
+    @htmlHandler = new options.Handler(options.url, options.visitor || visitor, options.guide)
     @parser = new htmlparser.Parser(@htmlHandler)
 
-  convertHtml: (code) ->
+  convert: (code) ->
     @htmlHandler.reset()
     @parser.parseComplete(code)
     @htmlHandler.getOutput()
@@ -15,4 +15,4 @@ class HtmlRewriter
   htmlVisitor: (location, name, context, url) ->
     # nothing
 
-
+exports.HtmlRewriter = HtmlRewriter

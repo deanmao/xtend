@@ -6,8 +6,10 @@ jsp = require("uglify-js").parser
 coffee = require('coffee-script')
 DnsServer = require('./lib/dns_server').DnsServer
 
-exports.Handler = require('./lib/handler')
-exports.HtmlRewriter = require('./lib/html_rewriter')
+exports.Handler = require('./lib/handler').Handler
+exports.BasicHandler = require('./lib/basic_handler').BasicHandler
+exports.HtmlRewriter = require('./lib/html_rewriter').HtmlRewriter
+exports.JsRewriter = require('./lib/js_rewriter').JsRewriter
 
 compact = (path, cb) ->
   m8(path).register('.coffee', (code,bare) ->
