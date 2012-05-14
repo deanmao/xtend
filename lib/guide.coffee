@@ -1,3 +1,5 @@
+BasicHandler = require('./basic_handler').BasicHandler
+
 class Guide
   REWRITE_HTML: true
   REWRITE_JS: true
@@ -13,14 +15,15 @@ class Guide
   util: require('./client/util')
   xtnd: require('./xtnd')
   js: require('./js')
-  html: require('./html2')
   constructor: (config) ->
     # ------------- copy over config into instance variables
     for own key, value of config
       do (key, value) =>
         @[key] = value
     # ------------- html init:
-    @htmlHandler = new @html.Handler(@)
+    visitor = (location, name, context, url) =>
+      @htmlVisitor(location, name, context, url)
+    @htmlHandler = new BasicHandler('', visitor, @)
     @parser = new @htmlparser.Parser(@htmlHandler)
     # ------------- js init:
     r = @jsRewriter = new @js.Rewriter(@esprima, @codegen, @)
@@ -153,7 +156,9 @@ class Guide
   # block.
   createHtmlParser: (url)->
     if @REWRITE_HTML
-      handler = new @html.Handler(@, url)
+      visitor = (location, name, context, url) =>
+        @htmlVisitor(location, name, context, url)
+      handler = new BasicHandler(url, visitor, @)
       parser = new @htmlparser.Parser(handler)
       asdf = (chunk) ->
         handler.reset()

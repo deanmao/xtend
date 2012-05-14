@@ -1,10 +1,7 @@
 class Handler
-  constructor: (guide, url) ->
-    @g = guide
+  constructor: (url, visitor) ->
     @url = url
-    if @g.htmlVisitor
-      @visitor = (location, name, context) =>
-        @g.htmlVisitor(location, name, context, url)
+    @visitor = visitor
     @output = ''
     @closeStartTag = false
     @counts = {}
@@ -17,22 +14,8 @@ class Handler
   error: (err) ->
     console.log(err)
 
-  rewriteJS: (code, options) ->
-    try
-      @g.esprima.multilineStrings = true
-      output = @g.convertJs(code, options)
-    catch e
-      @g.p?('bad js from html2')
-      console.log('------------------------------')
-      console.log(code)
-      console.log('==============================')
-      @g.p?(@url)
-    finally
-      @g.esprima.multilineStrings = false
-    return output
-
   visit: (location, name) ->
-    data = @visitor?(location, name, @)
+    data = @visitor?(location, name, @, @url)
     if data
       @appendRaw(data)
 
@@ -43,6 +26,18 @@ class Handler
     @appendCloseStartTag()
     @output
 
+  visitScriptBlock: (data) ->
+    return ''
+
+  visitHtmlAttribute: () ->
+    return ''
+
+  visitScriptAttribute: (data) ->
+    return ''
+
+  shouldVisitHtmlAttribute: (nodeName, attrib) ->
+    true
+
   write: (el) ->
     switch el.type
       when 'text'
@@ -51,17 +46,7 @@ class Handler
         if @insideScript
           if el.data
             try
-              value = @g.util.removeHtmlComments(el.data)
-              value = @g.util.decodeInlineChars(value)
-              value = @rewriteJS(value, {
-                nodeVisitor: (node) ->
-                  if node.type == 'Literal' && typeof(node.value) == 'string'
-                    node.value = node.value.replace(/<\//g, 'asdffoo')
-              })
-              # value = @g.util.simpleEncode(value)
-              # TODO HACK: -- this makes js code bad if inside a regex
-              # value = value.replace(/<\//g, '<\\/')
-              # value = @g.makeSafe(value)
+              value = @visitScriptBlock(el.data)
               @appendText('\n\n'+value+'\n\n')
             catch e
               # sometimes script tags contain non-js such as
@@ -93,20 +78,11 @@ class Handler
         value = el.data
         if @insideScript && attrib == 'type' && !value.match(/javascript/i)
           @insideScript = false
-        if @g.tester.isHotTagAttribute(@tagName, attrib)
-          value2 = @g.xtnd.proxiedUrl(value, {tag: @tagName})
-          if @tagName.match(/^script/i)
-            value2 = value2 + @g.FORCE_SCRIPT_SUFFIX
-          @appendAttr(attrib, value2)
-        else if @g.tester.isInlineJsAttribute(attrib)
+        if @shouldVisitHtmlAttribute(@tagName, attrib)
+          @appendAttr(attrib, @visitHtmlAttribute(@tagName, attrib, value) )
+        else if @shouldVisitScriptAttribute(@tagName, attrib)
           if value
-            value = @g.util.removeHtmlComments(value)
-            value = @g.util.decodeChars(value)
-            value = '(function(){' + value + '})()'
-            value = @rewriteJS(value, {newline: '', indent: ''})
-            value = value.replace(/\}\(\)\);$/, '').replace(/^\(function \(\) \{/, '')
-            # value = @g.util.simpleEncode(value)
-            @appendAttr(attrib, value)
+            @appendAttr(attrib, @visitScriptAttribute(value))
           else
             @appendAttr(attrib, '')
         else

@@ -1,13 +1,11 @@
 htmlparser = require './client/htmlparser2'
-html = require './html2'
 
 class HtmlRewriter
-  esprima: require './client/esprima'
-  util: require './util'
-
   constructor: (options) ->
-  @htmlHandler = new html.Handler(@)
-  @parser = new htmlparser.Parser(@htmlHandler)
+    visitor = (location, name, context, url) =>
+      @htmlVisitor(location, name, context, url)
+    @htmlHandler = new options.Handler(options.url, visitor, options.guide)
+    @parser = new htmlparser.Parser(@htmlHandler)
 
   convertHtml: (code) ->
     @htmlHandler.reset()
@@ -15,3 +13,6 @@ class HtmlRewriter
     @htmlHandler.getOutput()
 
   htmlVisitor: (location, name, context, url) ->
+    # nothing
+
+

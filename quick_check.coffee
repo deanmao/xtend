@@ -46,7 +46,6 @@ unless useManual
     htmlparser: require('./lib/client/htmlparser2')
     xtnd: require('./lib/xtnd')
     js: require('./lib/js')
-    html: require('./lib/html2')
     tester: require('./lib/client/property_tester')
     util: require('./lib/client/util')
     p: () -> inspect(arguments...)
