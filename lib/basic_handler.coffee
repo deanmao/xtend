@@ -42,9 +42,12 @@ class BasicHandler extends Handler
     return value
 
   visitHtmlAttribute: (nodeName, attrib, value) ->
-    value2 = @g.xtnd.proxiedUrl(value, {tag: nodeName})
-    if nodeName.match(/^script/i)
-      value2 = value2 + @g.FORCE_SCRIPT_SUFFIX
-    return value2
+    if value
+      value2 = @g.xtnd.proxiedUrl(value, {tag: nodeName})
+      if nodeName.match(/^script/i)
+        value2 = value2 + @g.FORCE_SCRIPT_SUFFIX
+      return value2
+    else
+      return value
 
 exports.BasicHandler = BasicHandler
