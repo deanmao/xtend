@@ -25,7 +25,7 @@ configureServer = (server, guide, scripts, protocol) ->
     server.use(server.router)
   return server
 
-xtendme.generateScripts __dirname + '/empty_guide.coffee', (scripts) ->
+xtendme.generateScripts __dirname + '/empty_guide.coffee', {host: 'myapp.dev'}, (scripts) ->
   http = express.createServer()
   https = express.createServer(sslOptions)
   configureServer(http, guide, scripts, 'http').listen(8080)
