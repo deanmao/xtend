@@ -9,7 +9,8 @@ class EmptyGuide extends Guide
   # DEBUG_RES_HEADERS: true
 
 if typeof(window) != 'undefined'
-  guide = new EmptyGuide(host: 'myapp.dev')
+  options = require('data::options')
+  guide = new EmptyGuide(options)
   window.xtnd = guide.xtnd
 else
   module.exports = EmptyGuide

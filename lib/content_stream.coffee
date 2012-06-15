@@ -1,4 +1,5 @@
 stream = require('stream')
+btools = require('buffertools')
 fs = require('fs')
 models = require('./models')
 CachedFile = models.CachedFile
@@ -30,7 +31,7 @@ class ContentStream extends stream.Stream
     @res = res
     @req = req
     @proxyStream = proxyStream
-    @list = []
+    @content = new Buffer('')
     @buffer = buffer
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
@@ -54,14 +55,14 @@ class ContentStream extends stream.Stream
         @emit 'data', output
       @buffer.resume()
     else
-      @list.push(chunk.toString())
+      @content = btools.concat(@content, chunk)
 
   getJs: ->
-    data = @list.join('')
+    data = @content.toString()
     # if function/var is present in string, we assume JS
     # else, we will try to parse it with json and if it fails
     # go back to JS again
-    if data.match(/(function|var)/)
+    if data.match(/(function)/)
       try
         output = @g.convertJs(data)
         return output

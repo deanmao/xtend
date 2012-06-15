@@ -15,5 +15,6 @@
     , "bufferstream": "0.5.1"
     , "uglify-js": "1.2.6"
     , "directory-tree-watcher": "0.0.5"
+    , "buffertools": "1.0.9"
   }
 }
