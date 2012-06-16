@@ -13,6 +13,9 @@ dp = require('eyes').inspector(maxLength: 50000)
 #
 # All other requests have their data stream & headers sent to the remote
 # server, after being slightly modified.
+http = require('http')
+http.globalAgent.maxSockets = 100
+
 module.exports = (options) ->
   guide = options.guide
   forceScriptSuffixRegExp = new RegExp(guide.FORCE_SCRIPT_SUFFIX, 'g')
@@ -82,8 +85,9 @@ module.exports = (options) ->
           return
         req.headers.host = host
         stream = new ProxyStream(req, res, guide, isScript, protocol, skip, url)
-        stream.process =>
+        makeRequest = () =>
           remoteReq = request(
+            timeout: 30000
             url: url
             method: req.method
             followRedirect: false
@@ -91,6 +95,13 @@ module.exports = (options) ->
             jar: false
             pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
           )
+          remoteReq.on 'close', (e) ->
+            console.log('closed?')
+          remoteReq.on 'error', (e) ->
+            if e.code == 'ETIMEDOUT' || e.code = "ESOCKETTIMEDOUT"
+              console.log('hmm... timeout')
+            else
+              console.log('hmm... error')
           res.setHeader('X-Original-Url', host + req.originalUrl)
           remoteReq.pause()
           remoteReq.pipe(stream)
@@ -100,3 +111,4 @@ module.exports = (options) ->
             remoteReq.end()
           remoteReq.resume()
           buffer.resume()
+        stream.process(makeRequest)
