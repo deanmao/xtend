@@ -94,8 +94,6 @@ class ProxyStream extends stream.Stream
         else
           @res.removeHeader(k)
     @res.statusCode = resp.statusCode
-    # @res.setHeader('access-control-allow-headers', 'origin, x-xtnd-xhr')
-    # @res.setHeader('access-control-allow-origin', '*')
     for own k,v of @corsHeaders
       do (k,v) =>
         @res.setHeader(k, v)

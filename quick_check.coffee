@@ -42,12 +42,6 @@ unless useManual
     fs: require('fs')
     host: 'myapp.dev'
     esprima: esprima
-    codegen: require('./lib/client/escodegen')
-    htmlparser: require('./lib/client/htmlparser2')
-    xtnd: require('./lib/xtnd')
-    js: require('./lib/js')
-    tester: require('./lib/client/property_tester')
-    util: require('./lib/client/util')
     p: () -> inspect(arguments...)
   )
   if parseHtml

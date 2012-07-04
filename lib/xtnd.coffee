@@ -90,6 +90,28 @@ checkClickListener = () ->
           return el.href
         el = el.parentNode
 
+xtnd.getOriginal = (obj, property) ->
+  try
+    if _guide.PASSTHROUGH
+      return value
+    if value == null || property == null
+      return value
+    else if isDocument(obj)
+      switch property.toLowerCase()
+        when 'domain'
+          host = toNormalHost(document.location.host)
+          parts = host.split('.')
+          return parts[parts.length - 2] + '.' + parts[parts.length - 1]
+        when 'location'
+          return normalUrl(document.location)
+        else
+          value
+    else
+      value
+  catch error
+    _guide.p(error)
+    return value
+
 xtnd.get = (obj, property, value) ->
   try
     if _guide.PASSTHROUGH
@@ -99,7 +121,8 @@ xtnd.get = (obj, property, value) ->
     else if isDocument(obj)
       switch property.toLowerCase()
         when 'domain'
-          return document.domain
+          return _guide.host
+          # return document.domain
           # toProxiedHost(value)
         when 'location'
           proxiedUrl(value, {object: obj, property: property})

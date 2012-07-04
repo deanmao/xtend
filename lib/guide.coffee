@@ -30,9 +30,12 @@ class Guide
     @xtnd.setGuide(@)
 
     # ------------- create js rewrite rules
+    dp = @p
     convertPropertyToLiteral = (binding, node, allBindings) ->
       if node.name == 'propx'
         propBinding = allBindings['prop']
+        if !propBinding
+          dp(allBindings)
         if propBinding.type == 'Identifier'
           return {type: 'Literal', value: propBinding.name}
         else
@@ -73,6 +76,10 @@ class Guide
 
     r.find('@obj[@prop] += @rhs', {useExpression: true}, assignmentMatcher)
       .replaceWith("@obj[@prop] += xtnd.get(@obj, @propx, @rhs)", convertPropertyToLiteral)
+
+    findVariableDeclarator = (root) -> root.body[0].declarations[0]
+    r.find('var @variable = document.@prop', {finder: findVariableDeclarator}, assignmentMatcher)
+      .replaceWith("var @variable = xtnd.getOriginal(document, @propx)", convertPropertyToLiteral)
 
     checkHotMethod = (name, node) =>
       if name == 'method' && node.type == 'Identifier' && !@tester.isHotMethod(node.name)

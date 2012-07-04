@@ -119,6 +119,8 @@ class Rule
     )
     if @options?.useExpression
       tree.body[0].expression
+    else if @options?.finder
+      @options.finder(tree)
     else
       tree.body[0]
 
@@ -148,6 +150,8 @@ class Rule
         do (key, child) =>
           if typeof(child) == 'object' && child != null && nodeBP[key]
             isMatching = isMatching && @match(child, bindings, parent, key, nodeBP[key])
+          else if child == null and nodeBP[key] != null
+            isMatching = false
       return isMatching
     else
       return false

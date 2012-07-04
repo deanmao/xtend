@@ -14,7 +14,6 @@ dp = require('eyes').inspector(maxLength: 50000)
 # All other requests have their data stream & headers sent to the remote
 # server, after being slightly modified.
 http = require('http')
-http.globalAgent.maxSockets = 100
 
 module.exports = (options) ->
   guide = options.guide
@@ -35,8 +34,8 @@ module.exports = (options) ->
     store: new Session(url: mongoUrl)
   )
   returnVal = (req, res, next) ->
+    originalUrl = req.originalUrl
     sessionFunc req, res, ->
-      originalUrl = req.originalUrl
       if req.url.indexOf(guide.INTERNAL_URL_PREFIX) != -1
         if req.url.match(/xtnd_scripts.js/)
           res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
@@ -85,7 +84,7 @@ module.exports = (options) ->
           return
         req.headers.host = host
         stream = new ProxyStream(req, res, guide, isScript, protocol, skip, url)
-        makeRequest = () =>
+        stream.process =>
           remoteReq = request(
             timeout: 30000
             url: url
@@ -95,20 +94,19 @@ module.exports = (options) ->
             jar: false
             pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
           )
+          remoteReq.pause()
+          remoteReq.pipe(stream)
           remoteReq.on 'close', (e) ->
             console.log('closed?')
           remoteReq.on 'error', (e) ->
-            if e.code == 'ETIMEDOUT' || e.code = "ESOCKETTIMEDOUT"
-              console.log('hmm... timeout')
+            if e.code == 'ETIMEDOUT'
+              console.log 'timeout 4 '+originalUrl
             else
               console.log('hmm... error')
           res.setHeader('X-Original-Url', host + req.originalUrl)
-          remoteReq.pause()
-          remoteReq.pipe(stream)
           buffer.on 'data', (chunk) ->
             remoteReq.write(chunk)
           buffer.on 'end', ->
             remoteReq.end()
           remoteReq.resume()
           buffer.resume()
-        stream.process(makeRequest)
