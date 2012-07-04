@@ -1,6 +1,11 @@
 Xtend Overview
 ==============
 
+This is a basic connect module that will rewrite html & js so that it can be served from 
+a different domain.  For example, you can proxy maps.google.com to run under 
+maps.yourdomain.com.  It works by rewriting all urls to originate from yourdomain.com, and
+all requests to maps.google.com would route through yourdomain.com.
+
 ### Basics:
 
 First, forward your local ports 80 & 443 to 3000 and 3443 respectively
