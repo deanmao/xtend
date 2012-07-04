@@ -1,7 +1,7 @@
 {
-    "name": "xtend",
+    "name": "xtendme",
     "author": "Dean Mao <deanmao@gmail.com>",
-    "description": "xtend",
+    "description": "xtendme",
     "version": "0.1.0",
     "dependencies": {
       "express": "2.5.8"
