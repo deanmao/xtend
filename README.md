@@ -6,6 +6,9 @@ a different domain.  For example, you can proxy maps.google.com to run under
 maps.yourdomain.com.  It works by rewriting all urls to originate from yourdomain.com, and
 all requests to maps.google.com would route through yourdomain.com.
 
+This module is not yet ready for public release (so you can't npm install it yet).  But
+you are more than welcome to give it a run if you can figure out how to install it.
+
 ### Basics:
 
 First, forward your local ports 80 & 443 to 3000 and 3443 respectively
