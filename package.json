@@ -2,7 +2,7 @@
     "name": "xtendme",
     "author": "Dean Mao <deanmao@gmail.com>",
     "description": "xtendme",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "dependencies": {
       "express": "2.5.8"
     , "request": "2.9.202"
@@ -23,6 +23,6 @@
     "url": "http://github.com/deanmao/xtend.git"
   },
   "engines": {
-    "node": ">= 0.6 < 0.7.0"
+    "node": ">= 0.6"
   }
 }
