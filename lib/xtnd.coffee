@@ -1,7 +1,7 @@
 xtnd = exports
 
 _guide = null
-_threeComponents = /^(https?):\/\/([^\/]*)(.*)$/
+_threeComponents = /^(https?)?:?\/\/([^\/]*)(.*)$/
 _twoComponents = /^\/\/([^\/]*)(.*)$/
 
 listToHash = (str) ->
