@@ -154,6 +154,8 @@ class ProxyStream extends stream.Stream
         return @g.xtnd.normalUrl(value)
       when 'referer'
         return @g.xtnd.normalUrl(value)
+      when 'x-forwarded-proto'
+        return null
     return value
 
   choosePipe: ->
