@@ -39,6 +39,7 @@ unless useManual
   guide = new gd.Guide(
     REWRITE_HTML: true
     REWRITE_JS: true
+    htmlparser: require('node-hubbub')
     fs: require('fs')
     host: 'myapp.dev'
     esprima: esprima

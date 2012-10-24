@@ -171,12 +171,16 @@ class Guide
         @htmlVisitor(location, name, context, url)
       handler = new BasicHandler(url, visitor, @)
       parser = new @htmlparser.Parser(handler)
-      asdf = (chunk) ->
+      curried = (chunk, cb) ->
         handler.reset()
-        parser.parseChunk(chunk)
+        parser.parseChunk(chunk, ->
+          cb && cb(handler.output)
+        )
         handler.output
+      curried.async = parser.async
+      return curried
     else
-      asdf = (chunk) ->
+      curried = (chunk) ->
         chunk
 
   htmlVisitor: (location, name, context, url) ->
