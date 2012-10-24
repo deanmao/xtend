@@ -77,7 +77,8 @@ module.exports = (options) ->
           isScript = true
         if req.headers['x-xtnd-xhr']
           skip = true
-        url = xtnd.normalUrl(protocol, req.headers.host, originalUrl)
+        requestProtocol = req.headers['x-forwarded-proto'] || protocol
+        url = xtnd.normalUrl(requestProtocol, req.headers.host, originalUrl)
         host = xtnd.toNormalHost(req.headers.host)
         if guide.isProxyUrl(host)
           res.send('')
