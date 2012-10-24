@@ -50,9 +50,12 @@ class ContentStream extends stream.Stream
           fs.writeSync(@debugfile, "<!-- #{url} -->")
         fs.writeSync(@debugfile, chunk.toString())
       # we'll stream the html
-      output = @htmlStreamParser(chunk.toString())
-      if output.length != 0
-        @emit 'data', output
+      if @g.BUFFER_WHOLE_HTML
+        @content = btools.concat(@content, chunk)
+      else
+        output = @htmlStreamParser(chunk.toString())
+        if output.length != 0
+          @emit 'data', output
       @buffer.resume()
     else
       @content = btools.concat(@content, chunk)
@@ -134,7 +137,13 @@ class ContentStream extends stream.Stream
       else
         @emitJs(@getJs())
     else
-      @emit 'end'
+      if @g.BUFFER_WHOLE_HTML
+        # this is where we can run tidy on the content
+        output = @htmlStreamParser(@content.toString())
+        @emit 'data', output
+        @emit 'end'
+      else
+        @emit 'end'
     if @debugfile && @g.DEBUG_OUTPUT_HTML
       fs.closeSync(@debugfile)
 
