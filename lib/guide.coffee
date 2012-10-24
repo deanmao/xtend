@@ -166,7 +166,6 @@ class Guide
   # block.
   createHtmlParser: (url)->
     if @REWRITE_HTML
-      console.log 'asdf', url
       visitor = (location, name, context, url) =>
         @htmlVisitor(location, name, context, url)
       handler = new BasicHandler(url, visitor, @)
