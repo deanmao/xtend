@@ -91,6 +91,7 @@ checkClickListener = () ->
         el = el.parentNode
 
 xtnd.getOriginal = (obj, property) ->
+  value = obj[property]
   try
     if _guide.PASSTHROUGH
       return value
