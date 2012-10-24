@@ -53,15 +53,17 @@ class ContentStream extends stream.Stream
       if @g.BUFFER_WHOLE_HTML
         @content = btools.concat(@content, chunk)
       else
-        if @htmlStreamParser.async
-          @htmlStreamParser(chunk.toString(), (output) =>
+        if chunk
+          chunkString = chunk.toString()
+          if @htmlStreamParser.async
+            @htmlStreamParser(chunkString, (output) =>
+              if output.length != 0
+                @emit 'data', output
+            )
+          else
+            output = @htmlStreamParser(chunkString)
             if output.length != 0
               @emit 'data', output
-          )
-        else
-          output = @htmlStreamParser(chunk.toString())
-          if output.length != 0
-            @emit 'data', output
       @buffer.resume()
     else
       @content = btools.concat(@content, chunk)
@@ -146,7 +148,7 @@ class ContentStream extends stream.Stream
       if @g.BUFFER_WHOLE_HTML
         # this is where we can run tidy on the content
         if @htmlStreamParser.async
-          @htmlStreamParser(chunk.toString(), (output) =>
+          @htmlStreamParser(@content.toString(), (output) =>
             if output.length != 0
               @emit 'data', output
             @emit 'end'
