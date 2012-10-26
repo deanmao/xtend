@@ -35,11 +35,37 @@ class ContentStream extends stream.Stream
     @buffer = buffer
     @parseChunkCalls = 0
     @ended = false
+    fileIndex = fileIndex + 1
+    @endedCount = 0
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
     else if @type == HTML
       @htmlStreamParser = @g.createHtmlParser(@req.headers.host + '---' + @req.originalUrl)
       @res.header('X-Pipe-Content', 'html')
+
+  emitEnd: ->
+    if @type == HTML && @htmlStreamParser.async
+      if 0 == @parseChunkCalls && @ended
+        clearTimeout(@timeout)
+        @emit 'end'
+      else
+        @endedCount = @endedCount + 1
+        clearTimeout(@timeout)
+        @timeout = setTimeout( =>
+          if @endedCount < 15
+            @emitEnd()
+          else
+            console.log 'async chunk timeout, there is a problem with ', @req.originalUrl
+            @emit 'end'
+        , 1000)
+    else
+      @emit 'end'
+
+  writeDebugChunkFile: (chunk) ->
+    @chunkIndex = @chunkIndex || 0
+    @chunkIndex = @chunkIndex + 1
+    file = fs.openSync("./debug/html_#{fileIndex}_chunk_#{@chunkIndex}.html", 'w+')
+    fs.writeSync(file, chunk.toString())
 
   write: (chunk, encoding) ->
     if @type == HTML
@@ -63,8 +89,7 @@ class ContentStream extends stream.Stream
               @parseChunkCalls = @parseChunkCalls - 1
               if output.length != 0
                 @emit 'data', output
-              if 0 == @parseChunkCalls && @ended
-                @emit 'end'
+              @emitEnd()
             )
           else
             output = @htmlStreamParser(chunkString)
@@ -158,7 +183,7 @@ class ContentStream extends stream.Stream
           @htmlStreamParser(@content.toString(), (output) =>
             if output.length != 0
               @emit 'data', output
-            @emit 'end'
+            @emitEnd()
           )
         else
           output = @htmlStreamParser(@content.toString())
@@ -166,12 +191,7 @@ class ContentStream extends stream.Stream
             @emit 'data', output
           @emit 'end'
       else
-        if @htmlStreamParser.async
-          # if parser is async, we might not get all the data by the time we finish buffering
-          if 0 == @parseChunkCalls
-            @emit 'end'
-        else
-          @emit 'end'
+        @emitEnd()
     if @debugfile && @g.DEBUG_OUTPUT_HTML
       fs.closeSync(@debugfile)
 
