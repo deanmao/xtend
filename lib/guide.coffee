@@ -171,9 +171,11 @@ class Guide
       handler = new BasicHandler(url, visitor, @)
       parser = new @htmlparser.Parser(handler)
       curried = (chunk, cb) ->
-        handler.reset()
+        unless cb
+          handler.reset()
         parser.parseChunk(chunk, ->
           cb && cb(handler.output)
+          handler.reset()
         )
         handler.output
       curried.async = parser.async

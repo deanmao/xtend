@@ -33,6 +33,8 @@ class ContentStream extends stream.Stream
     @proxyStream = proxyStream
     @content = new Buffer('')
     @buffer = buffer
+    @parseChunkCalls = 0
+    @ended = false
     if @type == JS
       @res.header('X-Pipe-Content', 'javascript')
     else if @type == HTML
@@ -56,9 +58,13 @@ class ContentStream extends stream.Stream
         if chunk
           chunkString = chunk.toString()
           if @htmlStreamParser.async
+            @parseChunkCalls = @parseChunkCalls + 1
             @htmlStreamParser(chunkString, (output) =>
+              @parseChunkCalls = @parseChunkCalls - 1
               if output.length != 0
                 @emit 'data', output
+              if 0 == @parseChunkCalls && @ended
+                @emit 'end'
             )
           else
             output = @htmlStreamParser(chunkString)
@@ -136,6 +142,7 @@ class ContentStream extends stream.Stream
     @emit 'end'
 
   end: ->
+    @ended = true
     if @type == JS
       if @g.PRODUCTION
         if !@proxyStream.neverCache && @proxyStream.cacheKey
@@ -159,7 +166,12 @@ class ContentStream extends stream.Stream
             @emit 'data', output
           @emit 'end'
       else
-        @emit 'end'
+        if @htmlStreamParser.async
+          # if parser is async, we might not get all the data by the time we finish buffering
+          if 0 == @parseChunkCalls
+            @emit 'end'
+        else
+          @emit 'end'
     if @debugfile && @g.DEBUG_OUTPUT_HTML
       fs.closeSync(@debugfile)
 
