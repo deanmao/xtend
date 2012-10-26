@@ -13,6 +13,8 @@ class BasicHandler extends Handler
       output = @g.convertJs(code, options)
     catch e
       # bad js from basic handler
+      output = code
+      console.log 'WARNING: Bad inline js', e
     finally
       @g.esprima.multilineStrings = false
     return output

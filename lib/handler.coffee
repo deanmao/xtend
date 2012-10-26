@@ -5,6 +5,7 @@ class Handler
     @output = ''
     @closeStartTag = false
     @counts = {}
+    @scriptData = ''
 
   reset: ->
     @output = ''
@@ -45,13 +46,7 @@ class Handler
         @visit('inside', @tagName)
         if @insideScript
           if el.data
-            try
-              value = @visitScriptBlock(el.data)
-              @appendText('\n\n'+value+'\n\n')
-            catch e
-              # sometimes script tags contain non-js such as
-              # backbone view templates
-              @appendText(el.data)
+            @scriptData = @scriptData + el.data
           else
             @appendText('')
         else
@@ -60,6 +55,16 @@ class Handler
         @appendCloseStartTag()
         @appendRaw('\n<!--\n'+el.data+'\n-->\n')
       when 'tag'
+        if el.name?.match(/^\/script$/i)
+          try
+            value = @visitScriptBlock(@scriptData)
+            @appendText('\n\n'+value+'\n\n')
+          catch e
+            # sometimes script tags contain non-js such as
+            # backbone view templates
+            @appendText(@scriptData)
+          finally
+            @scriptData = ''
         if el.name[0] == '/'
           @insideScript = false
           if el.raw
