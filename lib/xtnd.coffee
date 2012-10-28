@@ -189,44 +189,46 @@ xtnd.methodCall = (obj, name, caller, args) ->
   if _guide.PASSTHROUGH
     return obj[name].apply(obj, args)
   if isLocation(obj) && isOneOf('replace', name)
-    obj[name].apply(caller, [proxiedUrl(args[0], {object: obj, property: name})])
+    return obj[name].apply(caller, [proxiedUrl(args[0], {object: obj, property: name})])
   else if isDocument(obj) && isOneOf('write writeln appendchild', name)
     xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
     value = args[0]
     if name == 'writeln'
-      document.writeln(xtnd.documentWriteHtmlParser(value))
+      value = value.replace(/asdffoo/g, '</')
+      return document.writeln(_guide.convertCompleteHtml(value))
     else if name == 'write'
-      document.write(xtnd.documentWriteHtmlParser(value))
+      value = value.replace(/asdffoo/g, '</')
+      return document.write(_guide.convertCompleteHtml(value))
     else if name == 'appendchild'
       traverseNode(value)
       document.appendChild(value)
   if isXMLHttpRequest(obj)
     if name == 'open'
       [method, url, async, user, pass] = args
-      obj.open(method, proxiedUrl(url, {type: 'xhr'}), async, user, pass)
+      return obj.open(method, proxiedUrl(url, {type: 'xhr'}), async, user, pass)
     else
-      obj[name].apply(caller, args)
+      return obj[name].apply(caller, args)
   else if isHtmlElement(obj) && isOneOf('setattribute getattribute appendchild', name)
     attrib = args[0]
     if name == 'setAttribute'
       if isOneOf('src href action', attrib)
-        obj.setAttribute(attrib, proxiedUrl(args[1], {object: obj, property: attrib}))
+        return obj.setAttribute(attrib, proxiedUrl(args[1], {object: obj, property: attrib}))
       else
-        obj[name].apply(caller, args)
+        return obj[name].apply(caller, args)
     else if name == 'getAttribute'
       if isOneOf('src href action', attrib)
-        obj.getAttribute(attrib, normalUrl(args[1], {object: obj, property: attrib}))
+        return obj.getAttribute(attrib, normalUrl(args[1], {object: obj, property: attrib}))
       else
-        obj[name].apply(caller, args)
+        return obj[name].apply(caller, args)
     else if name == 'appendChild'
       traverseNode(args[0])
-      obj[name].apply(caller, args)
+      return obj[name].apply(caller, args)
     else
-      obj[name].apply(caller, args)
+      return obj[name].apply(caller, args)
   else if obj.location && isOneOf('postmessage', name)
-    obj.postMessage(args[0], proxiedUrl(args[1], {type: 'postmessage'}))
+    return obj.postMessage(args[0], proxiedUrl(args[1], {type: 'postmessage'}))
   else
-    obj[name].apply(caller, args)
+    return obj[name].apply(caller, args)
 
 xtnd.ActiveXObject = () ->
 xtnd.ActiveXObject.prototype = (server, typeName, location) ->

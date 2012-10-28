@@ -25,7 +25,7 @@ class BasicHandler extends Handler
     value = @rewriteJS(value, {
       nodeVisitor: (node) ->
         if node.type == 'Literal' && typeof(node.value) == 'string'
-          node.value = node.value.replace(/<\//g, 'asdffoo')
+          node.value = node.value.replace(/<\//g, "asdffoo")
     })
     return value
 

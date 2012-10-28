@@ -153,13 +153,24 @@ class Guide
   convertHtml: (code) ->
     if @REWRITE_HTML
       @htmlHandler.reset()
-      @parser.parseComplete(code)
+      @parser.parseComplete(code, null, true)
       @htmlHandler.getOutput()
     else
       code
 
   isBrowser: ->
     typeof(window) != 'undefined'
+
+  convertCompleteHtml: (code)->
+    if @REWRITE_HTML
+      visitor = (location, name, context, url) =>
+        @htmlVisitor(location, name, context, url)
+      handler = new BasicHandler('', visitor, @)
+      parser = new @htmlparser.Parser(handler)
+      parser.parseComplete(code, null, true)
+      handler.getOutput();
+    else
+      code
 
   # This one is primarly for doing chunked content, to be used later
   # when we want to handle the html streams in chunks instead of one big
