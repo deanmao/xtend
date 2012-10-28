@@ -32,9 +32,13 @@ class Rewriter
     else
       root = @esprima.parse(js)
     nodeVisitor = options?.nodeVisitor
+    if nodeVisitor
+      traverse(root, (node) =>
+        node && nodeVisitor(node)
+        return true
+      )
     traverse(root, (node, parent, key) =>
       matchingRule = null
-      nodeVisitor?(node)
       for rule in @rules
         do (rule) =>
           unless matchingRule

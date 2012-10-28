@@ -6,7 +6,7 @@
 # ./quick_check.coffee example.js --manual
 
 argv = require('optimist').argv
-inspect = require('eyes').inspector(maxLength: 20000)
+inspect = require('eyes').inspector(maxLength: 300000)
 filename = argv._[0]
 if !filename
   useManual = true
@@ -39,7 +39,8 @@ unless useManual
   guide = new gd.Guide(
     REWRITE_HTML: true
     REWRITE_JS: true
-    htmlparser: require('node-hubbub')
+    BUFFER_WHOLE_HTML: true
+    htmlparser: require('hubbub')
     fs: require('fs')
     host: 'myapp.dev'
     esprima: esprima

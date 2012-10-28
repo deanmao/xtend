@@ -14,7 +14,7 @@ class BasicHandler extends Handler
     catch e
       # bad js from basic handler
       output = code
-      console.log 'WARNING: Bad inline js', e
+      console.log 'WARNING: Bad inline js', e, code
     finally
       @g.esprima.multilineStrings = false
     return output
