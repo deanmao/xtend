@@ -38,13 +38,13 @@ class CookieHandler
         if docs
           for cookie in docs
             do (cookie) =>
-              unless cookie.name.match(/^xtnd/)
+              unless cookie?.name?.match(/^xtnd/)
                 val = cookie.nameValueString()
                 rawCookies.push(val)
               delete @requestCookies[cookie.name]
         for own name, value of @requestCookies
           do (name, value) =>
-            unless name.match(/^xtnd/)
+            unless name?.match(/^xtnd/)
               c = new Cookie(session_id: @sessionId, domain: host, name: name, path: '/', value: value)
               c.assignKey()
               Cookie.update {key: c.key},
