@@ -65,6 +65,9 @@ class Guide
           return false
       return true
 
+    r.find('window.location.@prop', {useExpression: true}, assignmentMatcher)
+      .replaceWith("xtnd.getOriginal(window.location, @propx)", convertPropertyToLiteral)
+
     r.find('@obj.@prop = @rhs', {useExpression: true}, assignmentMatcher)
       .replaceWith("@obj.@prop = xtnd.get(@obj, @propx, @rhs)", convertPropertyToLiteral)
 

@@ -97,6 +97,14 @@ xtnd.getOriginal = (obj, property) ->
       return value
     if value == null || property == null
       return value
+    else if isLocation(obj)
+      switch property.toLowerCase()
+        when 'host'
+          return toNormalHost(window.location.host)
+        when 'hostname'
+          return toNormalHost(window.location.host)
+        else
+          return value
     else if isDocument(obj)
       switch property.toLowerCase()
         when 'domain'
@@ -106,7 +114,7 @@ xtnd.getOriginal = (obj, property) ->
         when 'location'
           return normalUrl(document.location)
         else
-          value
+          return value
     else
       value
   catch error
@@ -192,16 +200,17 @@ xtnd.methodCall = (obj, name, caller, args) ->
     return obj[name].apply(caller, [proxiedUrl(args[0], {object: obj, property: name})])
   else if isDocument(obj) && isOneOf('write writeln appendchild', name)
     xtnd.documentWriteHtmlParser ?= _guide.createHtmlParser()
-    value = args[0]
-    if name == 'writeln'
-      value = value.replace(/asdffoo/g, '</')
-      return document.writeln(_guide.convertCompleteHtml(value))
-    else if name == 'write'
-      value = value.replace(/asdffoo/g, '</')
-      return document.write(_guide.convertCompleteHtml(value))
-    else if name == 'appendchild'
-      traverseNode(value)
-      document.appendChild(value)
+    if args[0]
+      value = args[0].toString()
+      if name == 'writeln'
+        value = value.replace(/asdffoo/g, '</')
+        return document.writeln(_guide.convertCompleteHtml(value))
+      else if name == 'write'
+        value = value.replace(/asdffoo/g, '</')
+        return document.write(_guide.convertCompleteHtml(value))
+      else if name == 'appendchild'
+        traverseNode(value)
+        document.appendChild(value)
   if isXMLHttpRequest(obj)
     if name == 'open'
       [method, url, async, user, pass] = args
