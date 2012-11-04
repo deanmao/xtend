@@ -167,12 +167,21 @@ xtnd.eval = (code) ->
     xtnd.proxiedJS(code)
 
 if typeof(window) != 'undefined'
+  _origEval = window.eval
   _open = XMLHttpRequest.prototype.open
   window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
     url = proxiedUrl(url, {type: 'xhr'})
     out = _open.apply(this, [method, url, async, user, pass])
     this.setRequestHeader("x-xtnd-xhr", "yep")
     return out
+  window.eval = (x) ->
+    js = xtnd.eval(x)
+    val = null
+    try
+      val = _origEval(js)
+    catch e
+      # nothing
+    return val
 
 traverseNode = (node, parent) ->
   children = node.children
