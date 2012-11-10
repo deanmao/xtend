@@ -198,6 +198,10 @@ class Guide
       curried = (chunk) ->
         chunk
 
+  # provide the ability to override headers too
+  visitRequestHeader: (name, value) ->
+    return value
+
   htmlVisitor: (location, name, context, url) ->
     # ------------- append our special script after head tag
     if name == 'script' && location == 'before' && !context.insertedSpecialJS

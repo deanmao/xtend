@@ -73,6 +73,7 @@ class ProxyStream extends stream.Stream
     for own k,v of @req.headers
       do (k,v) =>
         val = @visitRequestHeader(k?.toLowerCase(), v)
+        val = @g.visitRequestHeader(k?.toLowerCase(), val)
         if val
           @requestHeaders[k] = val
     @cook = new CookieHandler(@req.session.id, @req.cookies, @)
