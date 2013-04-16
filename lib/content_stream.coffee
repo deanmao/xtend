@@ -69,7 +69,7 @@ class ContentStream extends stream.Stream
 
   write: (chunk, encoding) ->
     if @type == HTML
-      @buffer.pause()
+      # @buffer.pause()
       if @g.DEBUG_OUTPUT_HTML && chunk.length > 0
         unless @debugfile
           url = @req.headers.host + @req.url
@@ -95,7 +95,7 @@ class ContentStream extends stream.Stream
             output = @htmlStreamParser(chunkString)
             if output.length != 0
               @emit 'data', output
-      @buffer.resume()
+      # @buffer.resume()
     else
       @content = btools.concat(@content, chunk)
 
@@ -179,7 +179,9 @@ class ContentStream extends stream.Stream
     else
       if @g.BUFFER_WHOLE_HTML
         # this is where we can run tidy on the content
-        if @htmlStreamParser.async
+        if @content.toString().length == 0
+          @emitEnd()
+        else if @htmlStreamParser.async
           @htmlStreamParser(@content.toString(), (output) =>
             if output.length != 0
               @emit 'data', output

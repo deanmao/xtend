@@ -170,8 +170,13 @@ class Guide
         @htmlVisitor(location, name, context, url)
       handler = new BasicHandler('', visitor, @)
       parser = new @htmlparser.Parser(handler)
+      if code.indexOf('&#x3A;&#x2F;&#x2F;') > 0
+        # warning, big hack ahead:
+        code = code.replace(/&#x3A;/g, ':').replace(/&#x2F;/g, '/')
       parser.parseComplete(code, null, true)
-      handler.getOutput();
+      output = handler.getOutput()
+      console.log 'htmlzz2', output
+      return output
     else
       code
 

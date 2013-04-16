@@ -1,5 +1,6 @@
 xtnd = exports
 
+_blah = 0
 _guide = null
 _threeComponents = /^(https?)?:?\/\/([^\/]*)(.*)$/
 _twoComponents = /^\/\/([^\/]*)(.*)$/
@@ -36,13 +37,18 @@ proxiedUrl = xtnd.proxiedUrl = (orig, context) ->
   if _guide.isProxyUrl(orig)
     return orig # the url is already a proxy url
   [protocol, host, path] = threeParts(orig)
+  if path == null
+    path = ''
   if host
     if protocol
       return protocol + '://' + toProxiedHost(host, context) + path
     else
       return '//' + toProxiedHost(host, context) + path
   else
-    return orig
+    if orig == null
+      return ''
+    else
+      return orig
 
 normalUrl = xtnd.normalUrl = (protocol, host, path) ->
   if 1 == arguments.length
@@ -63,7 +69,9 @@ normalUrl = xtnd.normalUrl = (protocol, host, path) ->
     return orig
 
 xtnd.proxiedJS = (code) -> _guide.convertJs(code)
-xtnd.proxiedHtml = (code) -> _guide.convertHtml(code)
+xtnd.proxiedHtml = (code) ->
+  console.log 'html', code
+  _guide.convertHtml(code)
 xtnd.setGuide = (guide) -> _guide = guide
 xtnd.getGuide = () -> _guide
 xtnd.log = () -> console.log(arguments...)
@@ -167,21 +175,34 @@ xtnd.eval = (code) ->
     xtnd.proxiedJS(code)
 
 if typeof(window) != 'undefined'
-  _origEval = window.eval
+  # _send = XMLHttpRequest.prototype.send
+  # window.XMLHttpRequest.prototype.send = (a) ->
+  #   console.log(a)
+  #   _send.apply(this, [a])
   _open = XMLHttpRequest.prototype.open
   window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
     url = proxiedUrl(url, {type: 'xhr'})
-    out = _open.apply(this, [method, url, async, user, pass])
-    this.setRequestHeader("x-xtnd-xhr", "yep")
-    return out
-  window.eval = (x) ->
-    js = xtnd.eval(x)
-    val = null
-    try
-      val = _origEval(js)
-    catch e
-      # nothing
-    return val
+    _blah = _blah + 1
+    console.log('xhr', url, window.location.host)
+    if _blah > 100
+      debugger
+    else
+      out = _open.apply(this, [method, url, async, user, pass])
+      this.setRequestHeader("x-xtnd-xhr", "yep")
+      return out
+  # _origEval = window.eval
+  # window.eval = (x) ->
+  #   js = x
+  #   if x && x.indexOf('xtnd') == -1
+  #     js = xtnd.eval(x)
+  #   val = null
+  #   try
+  #     val = _origEval(js)
+  #   catch e
+  #     # console.log 'bad js'
+  #     # console.log, js
+  #     # throw e
+  #   return val
 
 traverseNode = (node, parent) ->
   children = node.children

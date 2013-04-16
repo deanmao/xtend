@@ -13,6 +13,7 @@ class Handler
   done: ->
 
   error: (err) ->
+    console.log('handler err')
     console.log(err)
 
   visit: (location, name) ->
@@ -21,6 +22,7 @@ class Handler
       @appendRaw(data)
 
   error: (err) ->
+    console.log('handler err 2')
     console.log(err)
 
   getOutput: () ->

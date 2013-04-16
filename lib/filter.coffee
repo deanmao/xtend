@@ -87,7 +87,7 @@ module.exports = (options) ->
         stream = new ProxyStream(req, res, guide, isScript, protocol, skip, url)
         stream.process =>
           remoteReq = request(
-            timeout: 30000
+            timeout: 5000
             url: url
             method: req.method
             followRedirect: false
@@ -95,10 +95,15 @@ module.exports = (options) ->
             jar: false
             pipefilter: (resp, dest) -> stream.pipefilter(resp, dest)
           )
-          remoteReq.pause()
+          # remoteReq.pause()
           remoteReq.pipe(stream)
+          remoteReq.on 'readable',  ->
+            console.log 'can read'
+          remoteReq.on 'end', (e) ->
+            console.log 'end on ', url
+            res.emit('complete')
           remoteReq.on 'close', (e) ->
-            console.log('closed?')
+            console.log('closed?', url)
           remoteReq.on 'error', (e) ->
             if e.code == 'ETIMEDOUT'
               console.log 'timeout 4 '+originalUrl
@@ -106,8 +111,9 @@ module.exports = (options) ->
               console.log('hmm... error')
           res.setHeader('X-Original-Url', host + req.originalUrl)
           buffer.on 'data', (chunk) ->
+            console.log 'buffer data'
             remoteReq.write(chunk)
           buffer.on 'end', ->
             remoteReq.end()
-          remoteReq.resume()
+          # remoteReq.resume()
           buffer.resume()

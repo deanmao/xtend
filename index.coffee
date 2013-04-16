@@ -11,8 +11,8 @@ exports.BasicHandler = require('./lib/basic_handler').BasicHandler
 exports.HtmlRewriter = require('./lib/html_rewriter').HtmlRewriter
 exports.JsRewriter = require('./lib/js_rewriter').JsRewriter
 
-compact = (path, options, cb) ->
-  m8(path).data().add('options', options).register('.coffee', (code,bare) ->
+compact = (filepath, options, cb) ->
+  m8(filepath).data().add('options', options).register('.coffee', (code,bare) ->
     coffee.compile(code, {bare: bare})
   ).compile (code) ->
     cb(code)
@@ -23,15 +23,15 @@ uglify = (code) ->
   ast = pro.ast_squeeze(ast)
   pro.gen_code(ast)
 
-exports.generateScripts = (path, options, callback) ->
+exports.generateScripts = (filepath, options, callback) ->
   if 'production' == process.env.NODE_ENV
     compact __dirname + '/lib/guide.coffee', {}, (baseCode) ->
-      compact path, options, (customCode) ->
+      compact filepath, options, (customCode) ->
         callback(uglify(baseCode + customCode))
   else
     generator = (res) ->
       compact __dirname + '/lib/guide.coffee', {}, (baseCode) ->
-        compact path, options, (customCode) ->
+        compact filepath, options, (customCode) ->
           res.send(baseCode + '\n' + customCode)
     callback(generator)
 
