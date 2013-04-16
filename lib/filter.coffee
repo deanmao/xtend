@@ -36,6 +36,7 @@ module.exports = (options) ->
   returnVal = (req, res, next) ->
     originalUrl = req.originalUrl
     sessionFunc req, res, ->
+      subdomain = req.headers?.host?.split('.')[0]
       if req.url.indexOf(guide.INTERNAL_URL_PREFIX) != -1
         if req.url.match(/xtnd_scripts.js/)
           res.setHeader('Content-Type', 'text/javascript; charset=UTF-8')
@@ -46,6 +47,8 @@ module.exports = (options) ->
             res.send(scripts)
         else
           next()
+      else if guide.LOCAL_SUBDOMAINS[subdomain]
+        next()
       else if req.url == '/robots.txt'
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         res.send("User-agent: *\nDisallow: /\n")
