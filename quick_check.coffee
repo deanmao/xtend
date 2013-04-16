@@ -23,7 +23,7 @@ if filename
   code = fs.readFileSync(filename, 'utf8')
 else
   code = """
-e.fn.init.prototype=e.fn;
+<h1>something</h1>
   """
 
 class Handler
@@ -40,7 +40,8 @@ unless useManual
     REWRITE_HTML: true
     REWRITE_JS: true
     BUFFER_WHOLE_HTML: true
-    htmlparser: require('hubbub')
+    # htmlparser: require('hubbub')
+    htmlparser: require('./lib/client/parser2_wrapper')
     fs: require('fs')
     host: 'myapp.dev'
     esprima: esprima

@@ -100,7 +100,6 @@ module.exports = (options) ->
           remoteReq.on 'readable',  ->
             console.log 'can read'
           remoteReq.on 'end', (e) ->
-            console.log 'end on ', url
             res.emit('complete')
           remoteReq.on 'close', (e) ->
             console.log('closed?', url)
@@ -111,7 +110,7 @@ module.exports = (options) ->
               console.log('hmm... error')
           res.setHeader('X-Original-Url', host + req.originalUrl)
           buffer.on 'data', (chunk) ->
-            console.log 'buffer data'
+            console.log 'buffer data', chunk.toString()
             remoteReq.write(chunk)
           buffer.on 'end', ->
             remoteReq.end()

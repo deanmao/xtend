@@ -8,7 +8,8 @@ class Guide
   CACHED_FILES_PATH: './cached'
   FORCE_SCRIPT_SUFFIX: '__XTND_SCRIPT'
   INTERNAL_URL_PREFIX: '/___xtnd'
-  htmlparser: require('./client/htmlparser2')
+  # htmlparser: require('./client/htmlparser2')
+  htmlparser: require('./client/parser2_wrapper')
   esprima: require('./client/esprima')
   codegen: require('./client/escodegen')
   tester: require('./client/property_tester')
@@ -174,9 +175,7 @@ class Guide
         # warning, big hack ahead:
         code = code.replace(/&#x3A;/g, ':').replace(/&#x2F;/g, '/')
       parser.parseComplete(code, null, true)
-      output = handler.getOutput()
-      console.log 'htmlzz2', output
-      return output
+      handler.getOutput()
     else
       code
 

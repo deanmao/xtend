@@ -1,9 +1,13 @@
 xtnd = exports
 
-_blah = 0
 _guide = null
 _threeComponents = /^(https?)?:?\/\/([^\/]*)(.*)$/
 _twoComponents = /^\/\/([^\/]*)(.*)$/
+
+# asdffoo hack:
+_crazy = new RegExp('&#160;&#8239;', 'g')
+crazyConvert = (str) ->
+  str.replace(_crazy, '</')
 
 listToHash = (str) ->
   hash = {}
@@ -70,7 +74,6 @@ normalUrl = xtnd.normalUrl = (protocol, host, path) ->
 
 xtnd.proxiedJS = (code) -> _guide.convertJs(code)
 xtnd.proxiedHtml = (code) ->
-  console.log 'html', code
   _guide.convertHtml(code)
 xtnd.setGuide = (guide) -> _guide = guide
 xtnd.getGuide = () -> _guide
@@ -153,8 +156,13 @@ xtnd.get = (obj, property, value) ->
         proxiedUrl(value, {object: obj, property: property})
       else if isOneOf('innerhtml', property)
         x = document.createElement('div')
-        x.innerHTML = value.replace(/asdffoo/g, '</')
+        x.innerHTML = crazyConvert(value)
         value = xtnd.proxiedHtml(x.innerHTML)
+        value
+      else if isOneOf('outerhtml', property)
+        x = document.createElement('div')
+        x.innerHTML = crazyConvert(value)
+        value = xtnd.proxiedHtml(x.outerHTML)
         value
       else
         value
@@ -182,14 +190,9 @@ if typeof(window) != 'undefined'
   _open = XMLHttpRequest.prototype.open
   window.XMLHttpRequest.prototype.open = (method, url, async, user, pass) ->
     url = proxiedUrl(url, {type: 'xhr'})
-    _blah = _blah + 1
-    console.log('xhr', url, window.location.host)
-    if _blah > 100
-      debugger
-    else
-      out = _open.apply(this, [method, url, async, user, pass])
-      this.setRequestHeader("x-xtnd-xhr", "yep")
-      return out
+    out = _open.apply(this, [method, url, async, user, pass])
+    this.setRequestHeader("x-xtnd-xhr", "yep")
+    return out
   # _origEval = window.eval
   # window.eval = (x) ->
   #   js = x
@@ -233,10 +236,10 @@ xtnd.methodCall = (obj, name, caller, args) ->
     if args[0]
       value = args[0].toString()
       if name == 'writeln'
-        value = value.replace(/asdffoo/g, '</')
+        value = crazyConvert(value)
         return document.writeln(_guide.convertCompleteHtml(value))
       else if name == 'write'
-        value = value.replace(/asdffoo/g, '</')
+        value = crazyConvert(value)
         return document.write(_guide.convertCompleteHtml(value))
       else if name == 'appendchild'
         traverseNode(value)
