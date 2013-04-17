@@ -139,6 +139,8 @@ class ProxyStream extends stream.Stream
         return null
       when 'x-content-type-options'
         return null
+      when 'x-webkit-csp'
+        return null
       when 'content-length'
         if @type == JS || @type == HTML
           return null

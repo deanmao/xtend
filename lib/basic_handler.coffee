@@ -25,10 +25,14 @@ class BasicHandler extends Handler
     value = @rewriteJS(value, {
       nodeVisitor: (node) ->
         # asdffoo hack:
-        if node.type == 'Literal' && typeof(node.value) == 'string'
-          node.value = node.value.replace(/<\//g, "&#160;&#8239;")
+        if node.type == 'Literal' && typeof(node.value) == 'string' && node.value.indexOf('/script') > 0
+          node.value = node.value.replace(/\/script/g, "\/scr'+'ipt")
+
+        # if node.type == 'Literal' && typeof(node.value) == 'string'
+        #   node.value = node.value.replace(/<\//g, "&#160;&#8239;")
     })
     return value
+    # return "\n//<![CDATA[\n" + value + "\n//]]>\n"
 
   shouldVisitHtmlAttribute: (nodeName, attrib) ->
     return tester.isHotTagAttribute(nodeName, attrib)

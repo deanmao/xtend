@@ -100,8 +100,6 @@ module.exports = (options) ->
           )
           # remoteReq.pause()
           remoteReq.pipe(stream)
-          remoteReq.on 'readable',  ->
-            console.log 'can read'
           remoteReq.on 'end', (e) ->
             res.emit('complete')
           remoteReq.on 'close', (e) ->
@@ -113,7 +111,6 @@ module.exports = (options) ->
               console.log('hmm... error')
           res.setHeader('X-Original-Url', host + req.originalUrl)
           buffer.on 'data', (chunk) ->
-            console.log 'buffer data', chunk.toString()
             remoteReq.write(chunk)
           buffer.on 'end', ->
             remoteReq.end()

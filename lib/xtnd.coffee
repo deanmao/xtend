@@ -253,12 +253,12 @@ xtnd.methodCall = (obj, name, caller, args) ->
   else if isHtmlElement(obj) && isOneOf('setattribute getattribute appendchild', name)
     attrib = args[0]
     if name == 'setAttribute'
-      if isOneOf('src href action', attrib)
+      if isOneOf('src href action url', attrib)
         return obj.setAttribute(attrib, proxiedUrl(args[1], {object: obj, property: attrib}))
       else
         return obj[name].apply(caller, args)
     else if name == 'getAttribute'
-      if isOneOf('src href action', attrib)
+      if isOneOf('src href action url', attrib)
         return obj.getAttribute(attrib, normalUrl(args[1], {object: obj, property: attrib}))
       else
         return obj[name].apply(caller, args)

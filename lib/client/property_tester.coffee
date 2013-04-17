@@ -72,7 +72,7 @@ testers = module.exports =
   isHotReference: generateTester(_hot_references)
   isHotProperty: generateTester(_hot_properties)
   isHotTagAttribute: (tagName, attribName) ->
-    _tag_attribute_pairs[tagName.toLowerCase()] == attribName
+    _tag_attribute_pairs[tagName.toLowerCase()] == attribName || 'url' == attribName
   getHotTagAttribute: (tagName) ->
     _tag_attribute_pairs[tagName.toLowerCase()]
   isDomLocationAttribute: generateTester(_dom_location_attributes)
